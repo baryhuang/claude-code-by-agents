@@ -1,6 +1,6 @@
 {
-  "name": "codebyagents",
-  "productName": "Code By Agents",
+  "name": "agentrooms",
+  "productName": "Agentrooms",
   "version": "0.0.1",
   "description": "Multi-Agent Programming Collaboration Tool",
   "main": "electron/main.js",
@@ -18,8 +18,8 @@
     "postinstall": "cd frontend && npm install && cd ../backend && npm install"
   },
   "build": {
-    "appId": "com.codebyagents.app",
-    "productName": "Code By Agents",
+    "appId": "com.agentrooms.app",
+    "productName": "Agentrooms",
     "electronVersion": "32.2.7",
     "directories": {
       "output": "dist"
@@ -27,6 +27,9 @@
     "files": [
       "electron/**/*",
       "frontend/dist/**/*",
+      "backend/dist/**/*",
+      "backend/package.json",
+      "backend/node_modules/**/*",
       "package.json"
     ],
     "mac": {
@@ -44,7 +47,7 @@
       "entitlementsInherit": "assets/entitlements.mac.plist"
     },
     "dmg": {
-      "title": "Code By Agents ${version}",
+      "title": "Agentrooms ${version}",
       "icon": "assets/icon.icns",
       "contents": [
         {

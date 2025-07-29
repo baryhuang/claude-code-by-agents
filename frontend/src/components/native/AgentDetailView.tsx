@@ -1,21 +1,43 @@
-import { Copy, Clock, FileText, GitBranch, ChevronDown, ChevronRight } from "lucide-react";
-import { useState } from "react";
-import type { AllMessage } from "../../types";
+import { Copy, ChevronDown, ChevronRight } from "lucide-react";
+import { useState, useCallback, useEffect } from "react";
+import type { ChatRequest, ChatMessage, ExecutionStep } from "../../types";
 import { useAgentConfig } from "../../hooks/useAgentConfig";
+import { useTheme } from "../../hooks/useTheme";
+import { useClaudeStreaming } from "../../hooks/useClaudeStreaming";
+import { usePermissions } from "../../hooks/chat/usePermissions";
+import { useAbortController } from "../../hooks/chat/useAbortController";
 import { ChatInput } from "./ChatInput";
+import { ChatMessages } from "../chat/ChatMessages";
+import { PermissionDialog } from "../PermissionDialog";
+import { getChatUrl } from "../../config/api";
+import type { StreamingContext } from "../../hooks/streaming/useMessageProcessor";
+import { debugStreamingConnection, debugStreamingChunk, debugStreamingPerformance, warnProxyBuffering } from "../../utils/streamingDebug";
 
 interface AgentDetailViewProps {
   agentId: string;
-  messages: AllMessage[];
-  sessionId: string | null;
-  // Chat functionality props
+  // Chat state from parent
+  agentSessions: Record<string, any>;
   input: string;
   isLoading: boolean;
   currentRequestId: string | null;
-  lastUsedAgentId: string | null;
-  onInputChange: (value: string) => void;
-  onSubmit: () => void;
-  onAbort: () => void;
+  hasReceivedInit: boolean;
+  hasShownInitMessage: boolean;
+  currentAssistantMessage: any;
+  // Chat state setters
+  setInput: (value: string) => void;
+  setCurrentSessionId: (sessionId: string | null, useAgentRoom: boolean) => void;
+  setHasReceivedInit: (value: boolean) => void;
+  setHasShownInitMessage: (value: boolean) => void;
+  setCurrentAssistantMessage: (message: any) => void;
+  addMessage: (msg: any, useAgentRoom: boolean) => void;
+  updateLastMessage: (content: string, useAgentRoom: boolean) => void;
+  clearInput: () => void;
+  generateRequestId: () => string;
+  resetRequestState: () => void;
+  startRequest: () => void;
+  // Helper functions
+  switchToAgent: (agentId: string) => void;
+  getOrCreateAgentSession: (agentId: string) => any;
 }
 
 const getAgentColor = (agentId: string) => {
@@ -41,20 +63,416 @@ const getAgentColor = (agentId: string) => {
 };
 
 export function AgentDetailView({ 
-  agentId, 
-  messages, 
-  sessionId, 
-  input, 
-  isLoading, 
-  currentRequestId, 
-  lastUsedAgentId, 
-  onInputChange, 
-  onSubmit, 
-  onAbort 
+  agentId,
+  // agentSessions, // Not used directly
+  input,
+  isLoading,
+  currentRequestId,
+  hasReceivedInit,
+  hasShownInitMessage,
+  currentAssistantMessage,
+  setInput,
+  setCurrentSessionId,
+  setHasReceivedInit,
+  setHasShownInitMessage,
+  setCurrentAssistantMessage,
+  addMessage,
+  updateLastMessage,
+  clearInput,
+  generateRequestId,
+  resetRequestState,
+  startRequest,
+  switchToAgent,
+  getOrCreateAgentSession,
 }: AgentDetailViewProps) {
-  const { getAgentById } = useAgentConfig();
+  const { getAgentById, config } = useAgentConfig();
   const agent = getAgentById(agentId);
   const [showConfig, setShowConfig] = useState(false);
+  
+  useTheme(); // For theme switching support
+  const { processStreamLine } = useClaudeStreaming();
+  const { abortRequest, createAbortHandler } = useAbortController();
+
+  // Switch to this agent when component mounts
+  useEffect(() => {
+    switchToAgent(agentId);
+  }, [agentId, switchToAgent]);
+
+  // Get agent-specific session data
+  const agentSession = getOrCreateAgentSession(agentId);
+  const currentAgentMessages = agentSession.messages;
+  const agentSessionId = agentSession.sessionId;
+
+  const {
+    permissionDialog,
+    closePermissionDialog,
+  } = usePermissions();
+
+  // Handle abort functionality
+  const handleAbort = useCallback(() => {
+    if (currentRequestId) {
+      abortRequest(currentRequestId, isLoading, resetRequestState);
+    }
+  }, [currentRequestId, isLoading, abortRequest, resetRequestState]);
+
+  // Handle sending messages with streaming
+  const handleSendMessage = useCallback(async () => {
+    if (!input.trim() || isLoading) return;
+    
+    const messageContent = input.trim();
+    const requestId = generateRequestId();
+    
+    // Add user message
+    const userMessage: ChatMessage = {
+      type: "chat",
+      role: "user",
+      content: messageContent,
+      timestamp: Date.now(),
+      agentId: agentId,
+    };
+    addMessage(userMessage, false); // false = not group mode
+
+    clearInput();
+    startRequest();
+
+    // Set up streaming context
+    const streamingContext: StreamingContext = {
+      hasReceivedInit,
+      currentAssistantMessage,
+      setHasReceivedInit,
+      setCurrentAssistantMessage,
+      onSessionId: (sessionId) => setCurrentSessionId(sessionId, false),
+      addMessage: (msg) => addMessage(msg, false),
+      updateLastMessage: (content) => updateLastMessage(content, false),
+      onRequestComplete: () => resetRequestState(),
+      shouldShowInitMessage: () => !hasShownInitMessage,
+      onInitMessageShown: () => setHasShownInitMessage(true),
+      agentId: agentId, // Pass agent ID for response attribution
+    };
+
+    try {
+      if (!agent) {
+        console.log("❌ CRITICAL ERROR - Agent not found for ID:", agentId);
+        return;
+      }
+
+      const chatRequest: ChatRequest = {
+        message: messageContent,
+        sessionId: agentSessionId || undefined,
+        requestId,
+        workingDirectory: agent.workingDirectory,
+        availableAgents: config.agents.map(agent => ({
+          id: agent.id,
+          name: agent.name,
+          description: agent.description,
+          workingDirectory: agent.workingDirectory,
+          apiEndpoint: agent.apiEndpoint,
+          isOrchestrator: agent.isOrchestrator
+        })),
+      };
+
+      const requestStartTime = Date.now();
+      const targetApiEndpoint = agent.apiEndpoint;
+      const finalUrl = getChatUrl(targetApiEndpoint);
+      
+      debugStreamingConnection(finalUrl, { "Content-Type": "application/json" });
+
+      const response = await fetch(finalUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(chatRequest),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      if (!response.body) {
+        throw new Error("No response body");
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      createAbortHandler(requestId);
+
+      let streamingDetected = false;
+      let lastResponseTime = Date.now();
+      const streamingTimeout = 30000; // 30 seconds
+
+      // Set up streaming detection timeout
+      const streamingCheck = setTimeout(() => {
+        if (!streamingDetected) {
+          warnProxyBuffering(streamingTimeout);
+          // Add a system message to inform user
+          addMessage({
+            type: "system",
+            subtype: "warning",
+            message: "Streaming may be affected by network configuration. Responses may appear delayed.",
+            timestamp: Date.now(),
+          }, false);
+        }
+      }, streamingTimeout);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split("\n");
+        debugStreamingChunk(chunk, lines.length);
+
+        for (const line of lines) {
+          if (line.trim()) {
+            if (!streamingDetected && Date.now() - lastResponseTime < 5000) {
+              streamingDetected = true;
+              clearTimeout(streamingCheck);
+              debugStreamingPerformance(requestStartTime, Date.now());
+            }
+            processStreamLine(line, streamingContext);
+            lastResponseTime = Date.now();
+          }
+        }
+      }
+
+      clearTimeout(streamingCheck);
+    } catch (error: any) {
+      console.error("Chat error:", error);
+      if (error.name !== "AbortError") {
+        addMessage({
+          type: "error",
+          subtype: "stream_error",
+          message: `Error: ${error.message}`,
+          timestamp: Date.now(),
+        }, false);
+      }
+      resetRequestState();
+    }
+  }, [
+    input,
+    isLoading,
+    agentId,
+    agentSessionId,
+    hasReceivedInit,
+    hasShownInitMessage,
+    currentAssistantMessage,
+    generateRequestId,
+    addMessage,
+    clearInput,
+    startRequest,
+    setHasReceivedInit,
+    setHasShownInitMessage,
+    setCurrentAssistantMessage,
+    setCurrentSessionId,
+    updateLastMessage,
+    resetRequestState,
+    processStreamLine,
+    createAbortHandler,
+    agent,
+    config,
+  ]);
+
+  // Handle execution of individual steps from orchestration plans
+  const handleExecuteStep = useCallback(async (step: ExecutionStep) => {
+    if (step.status !== "pending") return;
+
+    const targetAgent = getAgentById(step.agent);
+    if (!targetAgent) {
+      console.error(`Agent not found: ${step.agent}`);
+      return;
+    }
+
+    const requestId = generateRequestId();
+    
+    const userMessage: ChatMessage = {
+      type: "chat",
+      role: "user", 
+      content: step.message,
+      timestamp: Date.now(),
+      agentId: step.agent,
+    };
+
+    addMessage(userMessage, false);
+    startRequest();
+
+    const streamingContext: StreamingContext = {
+      hasReceivedInit,
+      currentAssistantMessage,
+      setHasReceivedInit,
+      setCurrentAssistantMessage,
+      onSessionId: (sessionId) => setCurrentSessionId(sessionId, false),
+      addMessage: (msg) => addMessage(msg, false),
+      updateLastMessage: (content) => updateLastMessage(content, false),
+      onRequestComplete: () => resetRequestState(),
+      shouldShowInitMessage: () => !hasShownInitMessage,
+      onInitMessageShown: () => setHasShownInitMessage(true),
+      agentId: step.agent, // Pass agent ID for step execution
+    };
+
+    try {
+      const chatRequest: ChatRequest = {
+        message: step.message,
+        sessionId: agentSessionId || undefined,
+        requestId,
+        workingDirectory: targetAgent.workingDirectory,
+        availableAgents: config.agents.map(agent => ({
+          id: agent.id,
+          name: agent.name,
+          description: agent.description,
+          workingDirectory: agent.workingDirectory,
+          apiEndpoint: agent.apiEndpoint,
+          isOrchestrator: agent.isOrchestrator
+        })),
+      };
+
+      const requestStartTime = Date.now();
+      const stepTargetApiEndpoint = targetAgent.apiEndpoint;
+      debugStreamingConnection(getChatUrl(stepTargetApiEndpoint), { "Content-Type": "application/json" });
+
+      const response = await fetch(getChatUrl(stepTargetApiEndpoint), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(chatRequest),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      if (!response.body) {
+        throw new Error("No response body");
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      createAbortHandler(requestId);
+
+      let streamingDetected = false;
+      let lastResponseTime = Date.now();
+      const streamingTimeout = 30000; // 30 seconds
+
+      // Set up streaming detection timeout
+      const streamingCheck = setTimeout(() => {
+        if (!streamingDetected) {
+          warnProxyBuffering(streamingTimeout);
+          // Add a system message to inform user
+          addMessage({
+            type: "system",
+            subtype: "warning",
+            message: "Streaming may be affected by network configuration. Responses may appear delayed.",
+            timestamp: Date.now(),
+          }, false);
+        }
+      }, streamingTimeout);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split("\n");
+        debugStreamingChunk(chunk, lines.length);
+
+        for (const line of lines) {
+          if (line.trim()) {
+            if (!streamingDetected && Date.now() - lastResponseTime < 5000) {
+              streamingDetected = true;
+              clearTimeout(streamingCheck);
+              debugStreamingPerformance(requestStartTime, Date.now());
+            }
+            processStreamLine(line, streamingContext);
+            lastResponseTime = Date.now();
+          }
+        }
+      }
+
+      clearTimeout(streamingCheck);
+    } catch (error: any) {
+      console.error("Step execution error:", error);
+      if (error.name !== "AbortError") {
+        addMessage({
+          type: "error",
+          subtype: "stream_error",
+          message: `Error executing step: ${error.message}`,
+          timestamp: Date.now(),
+        }, false);
+      }
+      resetRequestState();
+    }
+  }, [
+    generateRequestId,
+    addMessage,
+    startRequest,
+    hasReceivedInit,
+    hasShownInitMessage,
+    currentAssistantMessage,
+    setHasReceivedInit,
+    setHasShownInitMessage,
+    setCurrentAssistantMessage,
+    setCurrentSessionId,
+    updateLastMessage,
+    agentSessionId,
+    processStreamLine,
+    createAbortHandler,
+    resetRequestState,
+    getAgentById,
+    config,
+  ]);
+
+  // Handle automatic execution of entire orchestration plan
+  const handleExecutePlan = useCallback(async (steps: ExecutionStep[]) => {
+    console.log("Executing plan with", steps.length, "steps");
+    
+    // Execute steps respecting dependencies
+    const executeStepsRecursively = async (remainingSteps: ExecutionStep[]) => {
+      if (remainingSteps.length === 0) return;
+      
+      // Find steps that can be executed (no pending dependencies)
+      const executableSteps = remainingSteps.filter(step => {
+        if (step.status !== "pending") return false;
+        
+        // Check if all dependencies are completed
+        const dependencies = step.dependencies || [];
+        return dependencies.every(depId => {
+          const depStep = steps.find(s => s.id === depId);
+          return depStep?.status === "completed";
+        });
+      });
+      
+      if (executableSteps.length === 0) {
+        console.log("No more executable steps found");
+        return;
+      }
+      
+      // Execute all executable steps in parallel
+      console.log(`Executing ${executableSteps.length} steps:`, executableSteps.map(s => s.id));
+      
+      const promises = executableSteps.map(async (step) => {
+        try {
+          await handleExecuteStep(step);
+          // Mark step as completed (in a real implementation, this would be done by the execution response)
+          step.status = "completed";
+        } catch (error) {
+          console.error(`Failed to execute step ${step.id}:`, error);
+          step.status = "failed";
+        }
+      });
+      
+      await Promise.all(promises);
+      
+      // Continue with remaining steps
+      const stillPending = remainingSteps.filter(step => step.status === "pending");
+      if (stillPending.length > 0) {
+        // Small delay before next batch
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        await executeStepsRecursively(stillPending);
+      }
+    };
+    
+    await executeStepsRecursively(steps);
+    console.log("Plan execution completed");
+  }, [handleExecuteStep]);
   
   if (!agent) {
     return (
@@ -70,56 +488,15 @@ export function AgentDetailView({
     );
   }
 
-  // Filter messages for this specific agent
-  const agentMessages = messages.filter(msg => {
-    if (msg.type !== "chat") return false;
-    
-    // Enhanced matching: handle both exact match and fallback cases
-    const messageAgentId = ('agentId' in msg) ? msg.agentId : undefined;
-    const isExactMatch = messageAgentId === agentId;
-    
-    // If no exact match, check if this message should belong to this agent
-    // (e.g., if message has no agentId but this is the only/active agent)
-    const isImplicitMatch = !messageAgentId && messages.filter(m => 
-      m.type === "chat" && 'agentId' in m && m.agentId
-    ).length === 0;
-    
-    return isExactMatch || isImplicitMatch;
-  });
-
-  // Enhanced debug logging
-  console.log("🔍 AgentDetailView Debug:", {
-    targetAgentId: agentId,
-    totalMessages: messages.length,
-    chatMessages: messages.filter(msg => msg.type === "chat").length,
-    agentMessages: agentMessages.length,
-    allChatMessages: messages.filter(msg => msg.type === "chat").map(msg => ({
-      type: msg.type,
-      role: ('role' in msg) ? msg.role : 'unknown',
-      agentId: ('agentId' in msg) ? msg.agentId : 'undefined',
-      content: ('content' in msg) ? msg.content.substring(0, 50) + "..." : 'no content',
-      hasAgentId: ('agentId' in msg),
-      agentIdValue: ('agentId' in msg) ? msg.agentId : null
-    })),
-    messagesWithoutAgentId: messages.filter(msg => 
-      msg.type === "chat" && (!('agentId' in msg) || !msg.agentId)
-    ).length,
-    messagesWithAgentId: messages.filter(msg => 
-      msg.type === "chat" && ('agentId' in msg) && msg.agentId
-    ).length
-  });
+  // Use agent-specific messages
+  const agentMessages = currentAgentMessages;
   
   const lastActivity = agentMessages.length > 0 
     ? new Date(agentMessages[agentMessages.length - 1].timestamp).toLocaleString()
     : "No activity yet";
 
-  // Extract project name from working directory
-  const projectName = agent.workingDirectory.split('/').pop() || 
-                     agent.workingDirectory.split('\\').pop() || 
-                     "Unknown";
-
   // Determine agent status
-  const isActive = sessionId !== null;
+  const isActive = agentSessionId !== null;
   const status = isActive ? "Active" : "Idle";
 
   const agentColor = getAgentColor(agent.id);
@@ -130,9 +507,9 @@ export function AgentDetailView({
 
   return (
     <div className="agent-detail" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      <div className="agent-detail-content" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <div className="agent-detail-content" style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
         {/* Agent Header with Configuration */}
-        <div className="agent-detail-header">
+        <div className="agent-detail-header" style={{ flexShrink: 0 }}>
           <div 
             className="agent-detail-icon"
             style={{ backgroundColor: agentColor }}
@@ -287,15 +664,16 @@ export function AgentDetailView({
           </div>
         </div>
 
-        {/* Message History - Main Content */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+        {/* Message History - Main Content with Streaming */}
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
           <h2 style={{ 
             fontSize: "16px", 
             fontWeight: 600, 
             margin: "24px 0 16px 0",
-            color: "var(--claude-text-primary)" 
+            color: "var(--claude-text-primary)",
+            flexShrink: 0
           }}>
-            Recent Activity
+            Conversation
             {agentMessages.length > 0 && (
               <span style={{
                 fontSize: "12px",
@@ -308,107 +686,16 @@ export function AgentDetailView({
             )}
           </h2>
           
-          {agentMessages.length === 0 ? (
-            <div className="empty-state">
-              <div 
-                className="empty-state-icon"
-                style={{
-                  width: "48px",
-                  height: "48px",
-                  fontSize: "20px",
-                  background: "var(--claude-border)"
-                }}
-              >
-                <FileText size={20} />
-              </div>
-              <h3>No conversation history yet</h3>
-              <p>Switch to Agent Room to start talking with this agent</p>
-            </div>
-          ) : (
-            <div style={{ flex: 1, overflow: "hidden" }}>
-              <div 
-                style={{
-                  maxHeight: "calc(100vh - 300px)",
-                  overflowY: "auto",
-                  borderTop: "1px solid var(--claude-border)",
-                  paddingTop: "16px"
-                }}
-              >
-                {agentMessages.slice(-10).map((message, index) => (
-                  <div 
-                    key={index} 
-                    style={{
-                      display: "flex",
-                      gap: "12px",
-                      fontSize: "13px",
-                      marginBottom: "16px"
-                    }}
-                  >
-                    <div 
-                      style={{
-                        width: "6px",
-                        height: "6px",
-                        borderRadius: "50%",
-                        backgroundColor: ('role' in message && message.role === "user") ? "#6b7280" : agentColor,
-                        marginTop: "8px",
-                        flexShrink: 0
-                      }}
-                    />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div 
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                          marginBottom: "4px"
-                        }}
-                      >
-                        <span 
-                          style={{
-                            fontWeight: 500,
-                            color: "var(--claude-text-primary)"
-                          }}
-                        >
-                          {('role' in message && message.role === "user") ? "You" : agent.name}
-                        </span>
-                        <span 
-                          style={{
-                            fontSize: "11px",
-                            color: "var(--claude-text-muted)"
-                          }}
-                        >
-                          {new Date(message.timestamp).toLocaleTimeString()}
-                        </span>
-                      </div>
-                      <p 
-                        style={{
-                          color: "var(--claude-text-secondary)",
-                          margin: 0,
-                          lineHeight: 1.5,
-                          whiteSpace: "pre-wrap"
-                        }}
-                      >
-                        {'content' in message ? message.content : 'message' in message ? message.message : ''}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-                
-                {agentMessages.length > 10 && (
-                  <div 
-                    style={{
-                      textAlign: "center",
-                      marginTop: "16px",
-                      fontSize: "12px",
-                      color: "var(--claude-text-muted)"
-                    }}
-                  >
-                    Showing last 10 messages of {agentMessages.length} total
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+          {/* Messages container that allows ChatMessages to handle its own scrolling */}
+          <div className="messages-container" style={{ flex: 1, minHeight: 0 }}>
+            <ChatMessages
+              messages={agentMessages}
+              isLoading={isLoading}
+              onExecuteStep={handleExecuteStep}
+              onExecutePlan={handleExecutePlan}
+              currentAgentId={agentId}
+            />
+          </div>
         </div>
 
       </div>
@@ -421,12 +708,23 @@ export function AgentDetailView({
           currentRequestId={currentRequestId}
           activeAgentId={agentId}
           currentMode="agent"
-          lastUsedAgentId={lastUsedAgentId}
-          onInputChange={onInputChange}
-          onSubmit={onSubmit}
-          onAbort={onAbort}
+          lastUsedAgentId={null}
+          onInputChange={setInput}
+          onSubmit={handleSendMessage}
+          onAbort={handleAbort}
         />
       </div>
+
+      {/* Permission Dialog */}
+      {permissionDialog && (
+        <PermissionDialog
+          {...permissionDialog}
+          onAllow={() => closePermissionDialog()}
+          onAllowPermanent={() => closePermissionDialog()}
+          onDeny={() => closePermissionDialog()}
+          onClose={closePermissionDialog}
+        />
+      )}
     </div>
   );
 }

@@ -1,8 +1,10 @@
 const { app, BrowserWindow, Menu, shell, ipcMain } = require('electron');
 const path = require('path');
+const { spawn } = require('child_process');
 
 // Keep a global reference of the window object
 let mainWindow;
+let backendProcess;
 
 // Set a consistent user data path for localStorage persistence
 app.setPath('userData', path.join(app.getPath('appData'), 'Agentrooms'));
@@ -41,7 +43,8 @@ function createWindow() {
     // Open DevTools in development
     mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadFile(path.join(__dirname, '../frontend/dist/index.html'));
+    // In production, serve the built frontend files via the backend
+    mainWindow.loadURL('http://localhost:8080');
   }
 
   // Show window when ready to prevent visual flash
@@ -62,19 +65,46 @@ function createWindow() {
 }
 
 function startBackend() {
-  // Frontend-only app - no backend process needed
-  // The app will connect to the remote API endpoint
-  return;
+  if (isDev) {
+    // In development, assume backend is running separately
+    return;
+  }
+  
+  // In production, start the bundled backend server
+  const backendPath = path.join(__dirname, '../backend/dist/cli/node.js');
+  console.log('Starting backend from:', backendPath);
+  
+  backendProcess = spawn('node', [backendPath, '--port', '8080'], {
+    stdio: 'pipe', // Capture output
+    cwd: path.join(__dirname, '../backend')
+  });
+  
+  backendProcess.stdout.on('data', (data) => {
+    console.log('Backend:', data.toString());
+  });
+  
+  backendProcess.stderr.on('data', (data) => {
+    console.error('Backend Error:', data.toString());
+  });
+  
+  backendProcess.on('close', (code) => {
+    console.log(`Backend process exited with code ${code}`);
+  });
+  
+  // Give backend time to start
+  return new Promise(resolve => setTimeout(resolve, 2000));
 }
 
 function stopBackend() {
-  // No backend process to stop in frontend-only app
-  return;
+  if (backendProcess) {
+    backendProcess.kill();
+    backendProcess = null;
+  }
 }
 
 // App event handlers
-app.whenReady().then(() => {
-  startBackend();
+app.whenReady().then(async () => {
+  await startBackend();
   createWindow();
 
   app.on('activate', () => {
@@ -99,15 +129,15 @@ app.on('before-quit', () => {
 if (process.platform === 'darwin') {
   const template = [
     {
-      label: 'Code By Agents',
+      label: 'Agentrooms',
       submenu: [
         {
-          label: 'About Code By Agents',
+          label: 'About Agentrooms',
           role: 'about'
         },
         { type: 'separator' },
         {
-          label: 'Hide Code By Agents',
+          label: 'Hide Agentrooms',
           accelerator: 'Command+H',
           role: 'hide'
         },

@@ -51,6 +51,7 @@ export function AgentHubPage() {
     switchToAgent,
     getTargetAgentId,
     getAgentRoomContext,
+    getOrCreateAgentSession,
   } = useChatState();
 
   const {
@@ -126,7 +127,7 @@ export function AgentHubPage() {
           messageContent = input.trim(); // Preserve @mention in display
           // Use the specific agent's session, not the group session
           const agentSession = agentSessions[agent.id];
-          sessionToUse = agentSession?.sessionId || undefined;
+          sessionToUse = agentSession?.sessionId || null;
           console.log("🔄 Using agent-specific session:", sessionToUse);
           switchToAgent(agent.id);
         } else {
@@ -607,20 +608,26 @@ export function AgentHubPage() {
           /* Agent Detail View */
           <AgentDetailView
             agentId={activeAgentId}
-            messages={[
-              ...messages, // Individual agent session messages
-              ...getAgentRoomContext().messages.filter(msg => 
-                msg.type === "chat" && 'agentId' in msg && msg.agentId === activeAgentId
-              ) // Group session messages for this agent
-            ]}
-            sessionId={currentSessionId}
+            agentSessions={agentSessions}
             input={input}
             isLoading={isLoading}
             currentRequestId={currentRequestId}
-            lastUsedAgentId={lastUsedAgentId}
-            onInputChange={setInput}
-            onSubmit={handleSendMessage}
-            onAbort={handleAbort}
+            hasReceivedInit={hasReceivedInit}
+            hasShownInitMessage={hasShownInitMessage}
+            currentAssistantMessage={currentAssistantMessage}
+            setInput={setInput}
+            setCurrentSessionId={setCurrentSessionId}
+            setHasReceivedInit={setHasReceivedInit}
+            setHasShownInitMessage={setHasShownInitMessage}
+            setCurrentAssistantMessage={setCurrentAssistantMessage}
+            addMessage={addMessage}
+            updateLastMessage={updateLastMessage}
+            clearInput={clearInput}
+            generateRequestId={generateRequestId}
+            resetRequestState={resetRequestState}
+            startRequest={startRequest}
+            switchToAgent={switchToAgent}
+            getOrCreateAgentSession={getOrCreateAgentSession}
           />
         ) : (
           /* Chat Interface */
@@ -632,7 +639,7 @@ export function AgentHubPage() {
                 isLoading={isLoading} 
                 onExecuteStep={handleExecuteStep}
                 onExecutePlan={handleExecutePlan}
-                currentAgentId={activeAgentId}
+                currentAgentId={activeAgentId || undefined}
               />
             </div>
 
