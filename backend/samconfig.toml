@@ -35,6 +35,7 @@ capabilities = "CAPABILITY_IAM"
 confirm_changeset = true
 fail_on_empty_changeset = false
 stack_name = "claude-web-agent-dev"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-uch5mx0ixmvk"
 s3_prefix = "claude-web-agent-dev"
 region = "us-east-1"
 parameter_overrides = "Stage=\"dev\""

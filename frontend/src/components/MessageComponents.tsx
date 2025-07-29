@@ -8,13 +8,14 @@ import type {
 } from "../types";
 import { CollapsibleDetails } from "./messages/CollapsibleDetails";
 import { MESSAGE_CONSTANTS } from "../utils/constants";
-import { getAgentById } from "../config/agents";
+import { useAgentConfig } from "../hooks/useAgentConfig";
 
 interface ChatMessageComponentProps {
   message: ChatMessage;
 }
 
 export function ChatMessageComponent({ message }: ChatMessageComponentProps) {
+  const { getAgentById } = useAgentConfig();
   const isUser = message.role === "user";
   const agent = message.agentId ? getAgentById(message.agentId) : null;
 
@@ -344,19 +345,28 @@ export function OrchestrationMessageComponent({
   );
 }
 
-export function LoadingComponent() {
+interface LoadingComponentProps {
+  agentId?: string;
+}
+
+export function LoadingComponent({ agentId }: LoadingComponentProps = {}) {
+  const { getAgentById } = useAgentConfig();
+  const agent = agentId ? getAgentById(agentId) : null;
+  const displayName = agent ? agent.name : "Claude";
+  const avatarLetter = agent ? agent.name.charAt(0).toUpperCase() : "C";
+
   return (
     <div className="message-item animate-in">
       {/* Avatar */}
       <div className="message-avatar">
-        C
+        {avatarLetter}
       </div>
 
       {/* Message Content */}
       <div className="message-content">
         {/* Header */}
         <div className="message-header">
-          <span className="message-author">Claude</span>
+          <span className="message-author">{displayName}</span>
           <span className="message-time">now</span>
         </div>
 

@@ -18,6 +18,7 @@ export interface StreamingContext {
   ) => void;
   onAbortRequest?: () => void;
   onRequestComplete?: () => void;
+  agentId?: string; // Agent ID for response attribution
 }
 
 /**

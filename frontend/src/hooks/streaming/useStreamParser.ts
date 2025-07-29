@@ -63,6 +63,7 @@ export function useStreamParser() {
           role: "assistant",
           content: "",
           timestamp: Date.now(),
+          agentId: context.agentId, // Set agent ID for response attribution
         };
         context.setCurrentAssistantMessage(messageToUpdate);
         context.addMessage(messageToUpdate);

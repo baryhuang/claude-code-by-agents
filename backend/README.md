@@ -1,17 +1,22 @@
-# Agentrooms
+# Claude Code Agentrooms
 
 Multi-agent workspace for collaborative development with Claude CLI. Route tasks to specialized agents (local or remote), coordinate complex workflows.
+
+> **Current Status**: This version supports one agent room. Multiple rooms support is planned for future releases - contributions welcome!
 
 <img width="1304" height="811" alt="Screenshot 2025-07-25 at 10 00 57 AM" src="https://github.com/user-attachments/assets/99c6095c-8c1d-4a69-a240-2a974e01c097" />
 
 > **Forked from [sugyan/claude-code-webui](https://github.com/sugyan/claude-code-webui)**
+
+https://github.com/user-attachments/assets/0b4e6709-d9b9-4676-85e0-aec8e15fd097
+
 
 ## Key Features
 
 - **`@agent-name` mentions**: Direct execution, no orchestration overhead
 - **Multi-agent workflows**: Automatic task decomposition and coordination  
 - **Local + Remote agents**: Mix local agents and remote machines (Mac Mini browser agent, cloud instances, etc.)
-- **Free public API**: No API key required (uses my endpoint by default)
+- **Free orchestrator Anthropic usage**: No API key required (uses my endpoint to cover your cost by default ) Sure you can bring your own API_KEY
 - **Custom API support**: Configure your own endpoint in Settings
 - **Dynamic agents**: Add/remove agents via web UI
 

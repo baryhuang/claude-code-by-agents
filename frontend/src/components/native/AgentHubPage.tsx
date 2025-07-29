@@ -122,7 +122,8 @@ export function AgentHubPage() {
             endpoint: agent.apiEndpoint
           });
           targetAgentId = agent.id;
-          messageContent = cleanMessage;
+          // Keep the full message with @mention for history, but send clean message to agent
+          messageContent = input.trim(); // Preserve @mention in display
           // Use the specific agent's session, not the group session
           const agentSession = agentSessions[agent.id];
           sessionToUse = agentSession?.sessionId || undefined;
@@ -201,6 +202,7 @@ export function AgentHubPage() {
       onRequestComplete: () => resetRequestState(),
       shouldShowInitMessage: () => !hasShownInitMessage,
       onInitMessageShown: () => setHasShownInitMessage(true),
+      agentId: targetAgentId, // Pass agent ID for response attribution
     };
 
     try {
@@ -218,8 +220,13 @@ export function AgentHubPage() {
         isOrchestrator: currentAgent.isOrchestrator
       });
 
+      // For direct mentions, send clean message to agent but keep full message for display
+      const messageToAgent = messageContent.startsWith('@') ? 
+        messageContent.replace(/^@(\w+(?:-\w+)*)\s+/, '') : 
+        messageContent;
+
       const chatRequest: ChatRequest = {
-        message: messageContent,
+        message: messageToAgent,
         sessionId: sessionToUse || undefined,
         requestId,
         workingDirectory: currentAgent.workingDirectory,
@@ -386,6 +393,7 @@ export function AgentHubPage() {
       onRequestComplete: () => resetRequestState(),
       shouldShowInitMessage: () => !hasShownInitMessage,
       onInitMessageShown: () => setHasShownInitMessage(true),
+      agentId: step.agent, // Pass agent ID for step execution
     };
 
     try {
@@ -612,6 +620,7 @@ export function AgentHubPage() {
                 isLoading={isLoading} 
                 onExecuteStep={handleExecuteStep}
                 onExecutePlan={handleExecutePlan}
+                currentAgentId={activeAgentId}
               />
             </div>
 

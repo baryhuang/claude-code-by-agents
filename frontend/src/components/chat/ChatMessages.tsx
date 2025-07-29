@@ -22,9 +22,10 @@ interface ChatMessagesProps {
   isLoading: boolean;
   onExecuteStep?: (step: any) => void;
   onExecutePlan?: (steps: any[]) => void;
+  currentAgentId?: string; // Agent ID for loading state
 }
 
-export function ChatMessages({ messages, isLoading, onExecuteStep, onExecutePlan }: ChatMessagesProps) {
+export function ChatMessages({ messages, isLoading, onExecuteStep, onExecutePlan, currentAgentId }: ChatMessagesProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom
@@ -77,7 +78,7 @@ export function ChatMessages({ messages, isLoading, onExecuteStep, onExecutePlan
         ) : (
           <>
             {messages.map(renderMessage)}
-            {isLoading && <LoadingComponent />}
+            {isLoading && <LoadingComponent agentId={currentAgentId} />}
             <div ref={messagesEndRef} />
           </>
         )}
