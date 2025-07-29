@@ -43,8 +43,8 @@ function createWindow() {
     // Open DevTools in development
     mainWindow.webContents.openDevTools();
   } else {
-    // In production, serve the built frontend files via the backend
-    mainWindow.loadURL('http://localhost:8080');
+    // In production, load the built frontend files directly
+    mainWindow.loadFile(path.join(__dirname, '../frontend/dist/index.html'));
   }
 
   // Show window when ready to prevent visual flash
@@ -104,7 +104,10 @@ function stopBackend() {
 
 // App event handlers
 app.whenReady().then(async () => {
-  await startBackend();
+  // Skip backend startup since we're running without it
+  if (!isDev) {
+    console.log('Running in production mode without backend');
+  }
   createWindow();
 
   app.on('activate', () => {
@@ -115,14 +118,18 @@ app.whenReady().then(async () => {
 });
 
 app.on('window-all-closed', () => {
-  stopBackend();
+  if (!isDev) {
+    stopBackend();
+  }
   if (process.platform !== 'darwin') {
     app.quit();
   }
 });
 
 app.on('before-quit', () => {
-  stopBackend();
+  if (!isDev) {
+    stopBackend();
+  }
 });
 
 // macOS Menu

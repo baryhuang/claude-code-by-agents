@@ -27,9 +27,6 @@
     "files": [
       "electron/**/*",
       "frontend/dist/**/*",
-      "backend/dist/**/*",
-      "backend/package.json",
-      "backend/node_modules/**/*",
       "package.json"
     ],
     "mac": {
