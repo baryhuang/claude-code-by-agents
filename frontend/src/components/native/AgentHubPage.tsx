@@ -614,6 +614,13 @@ export function AgentHubPage() {
               ) // Group session messages for this agent
             ]}
             sessionId={currentSessionId}
+            input={input}
+            isLoading={isLoading}
+            currentRequestId={currentRequestId}
+            lastUsedAgentId={lastUsedAgentId}
+            onInputChange={setInput}
+            onSubmit={handleSendMessage}
+            onAbort={handleAbort}
           />
         ) : (
           /* Chat Interface */

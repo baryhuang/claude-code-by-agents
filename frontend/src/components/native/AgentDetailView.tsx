@@ -2,11 +2,20 @@ import { Copy, Clock, FileText, GitBranch, ChevronDown, ChevronRight } from "luc
 import { useState } from "react";
 import type { AllMessage } from "../../types";
 import { useAgentConfig } from "../../hooks/useAgentConfig";
+import { ChatInput } from "./ChatInput";
 
 interface AgentDetailViewProps {
   agentId: string;
   messages: AllMessage[];
   sessionId: string | null;
+  // Chat functionality props
+  input: string;
+  isLoading: boolean;
+  currentRequestId: string | null;
+  lastUsedAgentId: string | null;
+  onInputChange: (value: string) => void;
+  onSubmit: () => void;
+  onAbort: () => void;
 }
 
 const getAgentColor = (agentId: string) => {
@@ -31,7 +40,18 @@ const getAgentColor = (agentId: string) => {
   return colors[Math.abs(hash) % colors.length];
 };
 
-export function AgentDetailView({ agentId, messages, sessionId }: AgentDetailViewProps) {
+export function AgentDetailView({ 
+  agentId, 
+  messages, 
+  sessionId, 
+  input, 
+  isLoading, 
+  currentRequestId, 
+  lastUsedAgentId, 
+  onInputChange, 
+  onSubmit, 
+  onAbort 
+}: AgentDetailViewProps) {
   const { getAgentById } = useAgentConfig();
   const agent = getAgentById(agentId);
   const [showConfig, setShowConfig] = useState(false);
@@ -109,8 +129,8 @@ export function AgentDetailView({ agentId, messages, sessionId }: AgentDetailVie
   };
 
   return (
-    <div className="agent-detail">
-      <div className="agent-detail-content">
+    <div className="agent-detail" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      <div className="agent-detail-content" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         {/* Agent Header with Configuration */}
         <div className="agent-detail-header">
           <div 
@@ -391,6 +411,21 @@ export function AgentDetailView({ agentId, messages, sessionId }: AgentDetailVie
           )}
         </div>
 
+      </div>
+      
+      {/* Chat Input */}
+      <div style={{ borderTop: "1px solid var(--claude-border)" }}>
+        <ChatInput
+          input={input}
+          isLoading={isLoading}
+          currentRequestId={currentRequestId}
+          activeAgentId={agentId}
+          currentMode="agent"
+          lastUsedAgentId={lastUsedAgentId}
+          onInputChange={onInputChange}
+          onSubmit={onSubmit}
+          onAbort={onAbort}
+        />
       </div>
     </div>
   );
