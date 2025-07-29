@@ -158,6 +158,8 @@ export function OrchestrationMessageComponent({
   onExecuteStep,
   onExecutePlan
 }: OrchestrationMessageComponentProps) {
+  const { getAgentById } = useAgentConfig();
+  
   const formatTime = (timestamp: number) => {
     return new Date(timestamp).toLocaleTimeString('en-US', { 
       hour12: false, 

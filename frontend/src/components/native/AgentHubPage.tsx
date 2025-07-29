@@ -607,7 +607,12 @@ export function AgentHubPage() {
           /* Agent Detail View */
           <AgentDetailView
             agentId={activeAgentId}
-            messages={messages}
+            messages={[
+              ...messages, // Individual agent session messages
+              ...getAgentRoomContext().messages.filter(msg => 
+                msg.type === "chat" && 'agentId' in msg && msg.agentId === activeAgentId
+              ) // Group session messages for this agent
+            ]}
             sessionId={currentSessionId}
           />
         ) : (

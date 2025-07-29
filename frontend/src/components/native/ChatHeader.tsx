@@ -50,7 +50,7 @@ export function ChatHeader({ currentMode, activeAgentId }: ChatHeaderProps) {
             </div>
             <div className="chat-header-info">
               <h2>{currentAgent?.name || "Select Agent"}</h2>
-              <p>{currentAgent?.workingDirectory.split('/').pop() || ""}</p>
+              <p>Agent Details</p>
             </div>
           </>
         )}
@@ -115,49 +115,6 @@ export function ChatHeader({ currentMode, activeAgentId }: ChatHeaderProps) {
         </div>
       </div>
 
-      {/* Working Directory Info (Agent Mode) */}
-      {currentMode === "agent" && currentAgent && (
-        <div 
-          style={{
-            position: "absolute",
-            top: "100%",
-            left: "20px",
-            right: "20px",
-            background: "var(--claude-main-bg)",
-            borderTop: "1px solid var(--claude-border)",
-            padding: "12px 0",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            fontSize: "12px",
-            color: "var(--claude-text-muted)"
-          }}
-        >
-          <span style={{ fontWeight: 500 }}>Working Directory:</span>
-          <code 
-            style={{
-              background: "var(--claude-border)",
-              padding: "4px 8px",
-              borderRadius: "4px",
-              fontFamily: "'SF Mono', Monaco, 'Cascadia Code', monospace",
-              fontSize: "11px"
-            }}
-          >
-            {currentAgent.workingDirectory}
-          </code>
-          <button
-            onClick={() => navigator.clipboard.writeText(currentAgent.workingDirectory)}
-            style={{
-              marginLeft: "auto",
-              color: "var(--claude-text-accent)",
-              fontSize: "11px",
-              fontWeight: 500
-            }}
-          >
-            Copy
-          </button>
-        </div>
-      )}
     </div>
   );
 }
