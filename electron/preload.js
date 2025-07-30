@@ -9,6 +9,23 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Example: openExternal
   openExternal: (url) => {
     ipcRenderer.invoke('open-external', url);
+  },
+
+  // Persistent Storage API
+  storage: {
+    // Agent Configuration
+    saveAgentConfig: (config) => ipcRenderer.invoke('storage:save-agent-config', config),
+    loadAgentConfig: () => ipcRenderer.invoke('storage:load-agent-config'),
+    
+    // Chat Messages
+    saveConversation: (sessionId, messages) => ipcRenderer.invoke('storage:save-conversation', sessionId, messages),
+    loadConversation: (sessionId) => ipcRenderer.invoke('storage:load-conversation', sessionId),
+    listConversations: () => ipcRenderer.invoke('storage:list-conversations'),
+    
+    // App Settings
+    saveSetting: (key, value) => ipcRenderer.invoke('storage:save-setting', key, value),
+    loadSetting: (key) => ipcRenderer.invoke('storage:load-setting', key),
+    loadAllSettings: () => ipcRenderer.invoke('storage:load-all-settings')
   }
 });
 

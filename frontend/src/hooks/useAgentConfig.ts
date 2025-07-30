@@ -40,9 +40,32 @@ export function useAgentConfig() {
   useEffect(() => {
     // Initialize config on client side
     console.log("🚀 useAgentConfig initializing...", { storageKey: STORAGE_KEY });
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      console.log("📖 Loading from localStorage:", saved);
+    
+    // Check if running in Electron
+    const isElectron = window.electronAPI?.storage;
+    
+    if (isElectron) {
+      // Use Electron's persistent storage
+      window.electronAPI!.storage.loadAgentConfig().then((result) => {
+        if (result.success && result.data) {
+          console.log("📖 Loading from Electron storage:", result.data);
+          setConfig(result.data);
+        } else {
+          console.log("🆕 No saved Electron config, using defaults");
+          setConfig(DEFAULT_CONFIG);
+          window.electronAPI!.storage.saveAgentConfig(DEFAULT_CONFIG);
+        }
+        setIsInitialized(true);
+      }).catch((error) => {
+        console.warn("❌ Failed to load from Electron storage:", error);
+        setConfig(DEFAULT_CONFIG);
+        setIsInitialized(true);
+      });
+    } else {
+      // Fallback to localStorage for web
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        console.log("📖 Loading from localStorage:", saved);
       
       if (saved) {
         const parsedConfig = JSON.parse(saved);
@@ -69,12 +92,13 @@ export function useAgentConfig() {
         setConfig(DEFAULT_CONFIG);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_CONFIG));
       }
-    } catch (error) {
-      console.warn("❌ Failed to load agent configuration:", error);
-      setConfig(DEFAULT_CONFIG);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_CONFIG));
+      } catch (error) {
+        console.warn("❌ Failed to load agent configuration:", error);
+        setConfig(DEFAULT_CONFIG);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_CONFIG));
+      }
+      setIsInitialized(true);
     }
-    setIsInitialized(true);
   }, [updateTrigger]);
 
   // Listen for storage events and force refresh (important for Electron)
@@ -127,25 +151,48 @@ export function useAgentConfig() {
     });
     setConfig(updatedConfig);
     
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedConfig));
-      console.log("💾 Saved to localStorage:", JSON.stringify(updatedConfig, null, 2));
-      
-      // Verify it was saved
-      const verification = localStorage.getItem(STORAGE_KEY);
-      console.log("✅ Verification read:", verification);
-      
-      // Force refresh of other hook instances (important for Electron)
-      console.log("🔄 Triggering refresh for all hook instances");
-      setUpdateTrigger(prev => prev + 1);
-      
-      // Dispatch a custom event to notify other components
-      window.dispatchEvent(new CustomEvent('agentConfigUpdated', { 
-        detail: updatedConfig 
-      }));
-      
-    } catch (error) {
-      console.error("❌ Failed to save agent configuration:", error);
+    const isElectron = window.electronAPI?.storage;
+    
+    if (isElectron) {
+      // Use Electron's persistent storage
+      window.electronAPI!.storage.saveAgentConfig(updatedConfig).then((result) => {
+        if (result.success) {
+          console.log("💾 Saved to Electron storage");
+          
+          // Force refresh of other hook instances
+          console.log("🔄 Triggering refresh for all hook instances");
+          setUpdateTrigger(prev => prev + 1);
+          
+          // Dispatch a custom event to notify other components
+          window.dispatchEvent(new CustomEvent('agentConfigUpdated', { 
+            detail: updatedConfig 
+          }));
+        } else {
+          console.error("❌ Failed to save to Electron storage:", result.error);
+        }
+      });
+    } else {
+      // Fallback to localStorage for web
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedConfig));
+        console.log("💾 Saved to localStorage:", JSON.stringify(updatedConfig, null, 2));
+        
+        // Verify it was saved
+        const verification = localStorage.getItem(STORAGE_KEY);
+        console.log("✅ Verification read:", verification);
+        
+        // Force refresh of other hook instances (important for Electron)
+        console.log("🔄 Triggering refresh for all hook instances");
+        setUpdateTrigger(prev => prev + 1);
+        
+        // Dispatch a custom event to notify other components
+        window.dispatchEvent(new CustomEvent('agentConfigUpdated', { 
+          detail: updatedConfig 
+        }));
+        
+      } catch (error) {
+        console.error("❌ Failed to save agent configuration:", error);
+      }
     }
   };
 

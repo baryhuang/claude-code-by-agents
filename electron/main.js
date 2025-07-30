@@ -1,10 +1,12 @@
 const { app, BrowserWindow, Menu, shell, ipcMain } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
+const ElectronStorage = require('./storage');
 
 // Keep a global reference of the window object
 let mainWindow;
 let backendProcess;
+let storage;
 
 // Set a consistent user data path for localStorage persistence
 app.setPath('userData', path.join(app.getPath('appData'), 'Agentrooms'));
@@ -21,7 +23,9 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, 'preload.js')
+      preload: path.join(__dirname, 'preload.js'),
+      // Ensure partition for persistent storage
+      partition: 'persist:agentrooms'
     },
     titleBarStyle: 'hiddenInset', // macOS style
     trafficLightPosition: { x: 20, y: 20 },
@@ -104,6 +108,12 @@ function stopBackend() {
 
 // App event handlers
 app.whenReady().then(async () => {
+  // Initialize storage
+  storage = new ElectronStorage();
+  
+  // Setup IPC handlers for persistent storage
+  setupStorageHandlers();
+  
   // Skip backend startup since we're running without it
   if (!isDev) {
     console.log('Running in production mode without backend');
@@ -205,4 +215,42 @@ if (process.platform === 'darwin') {
   ];
 
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+}
+
+// Storage IPC Handlers
+function setupStorageHandlers() {
+  // Agent Configuration
+  ipcMain.handle('storage:save-agent-config', async (event, config) => {
+    return storage.saveAgentConfig(config);
+  });
+
+  ipcMain.handle('storage:load-agent-config', async (event) => {
+    return storage.loadAgentConfig();
+  });
+
+  // Chat Messages
+  ipcMain.handle('storage:save-conversation', async (event, sessionId, messages) => {
+    return storage.saveConversation(sessionId, messages);
+  });
+
+  ipcMain.handle('storage:load-conversation', async (event, sessionId) => {
+    return storage.loadConversation(sessionId);
+  });
+
+  ipcMain.handle('storage:list-conversations', async (event) => {
+    return storage.listConversations();
+  });
+
+  // App Settings
+  ipcMain.handle('storage:save-setting', async (event, key, value) => {
+    return storage.saveSetting(key, value);
+  });
+
+  ipcMain.handle('storage:load-setting', async (event, key) => {
+    return storage.loadSetting(key);
+  });
+
+  ipcMain.handle('storage:load-all-settings', async (event) => {
+    return storage.loadAllSettings();
+  });
 }
