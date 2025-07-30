@@ -29,22 +29,65 @@ https://github.com/user-attachments/assets/0b4e6709-d9b9-4676-85e0-aec8e15fd097
 
 ## Quick Start
 
+### Prerequisites
+1. **Install Claude CLI**: Download from [Claude Code documentation](https://docs.anthropic.com/en/docs/claude-code)
+2. **Authenticate**: Run `claude auth login` and complete the authentication
+
+### Option 1: Desktop App (Recommended)
+
+**Download Pre-built App:**
+- Download from [Releases](https://github.com/baryhuang/claude-code-by-agents/releases)
+- **Intel Mac**: `Agentrooms-0.0.1.dmg`
+- **Apple Silicon**: `Agentrooms-0.0.1-arm64.dmg`
+- Install by dragging to Applications folder
+- **Important**: Start the backend service separately (see Backend Setup below)
+
+**Build from Source:**
 ```bash
-# Prerequisites: Claude CLI installed + authenticated
+# Clone and build
+git clone https://github.com/baryhuang/claude-code-by-agents.git
+cd claude-code-by-agents
+npm install
+npm run build:frontend
+npm run dist:mac  # Creates DMG in dist/ folder
+```
 
-# Option 1: Desktop App
-make install && make electron      # Electron desktop app
-
-# Option 2: Web Development  
+### Option 2: Web Development
+```bash
+# Start backend service
 cd backend && deno task dev        # Backend: http://localhost:8080
-cd frontend && npm run dev         # Frontend: http://localhost:3000
 
-# 3. Start agent instances (local or remote)
+# Start frontend (separate terminal)
+cd frontend && npm run dev         # Frontend: http://localhost:3000
+```
+
+### Backend Setup (Required for DMG App)
+
+The DMG app runs frontend-only. Start the backend service separately:
+
+```bash
+# Clone the repository
+git clone https://github.com/baryhuang/claude-code-by-agents.git
+cd claude-code-by-agents
+
+# Start backend service
+cd backend && deno task dev
+# Backend will run on http://localhost:8080
+```
+
+**Configure Frontend to Connect:**
+- Open the Agentrooms app
+- Frontend will automatically connect to `localhost:8080`
+- If backend is on different port, update frontend config
+
+### Agent Setup (Optional)
+```bash
+# Start additional agent instances
 cd path/to/agent1 && deno task dev --port 8081   # Local agent
 cd path/to/agent2 && deno task dev --port 8082   # Local agent
 # Remote agents: Run on other machines, expose ports
 
-# 4. Configure agents in Settings
+# Configure agents in Settings UI
 ```
 
 ## Usage
@@ -102,20 +145,38 @@ Agent N ← Step N ← Read Previous Results
 
 ## Development
 
+### Desktop App Development
 ```bash
-# Desktop app
-make electron           # Run Electron app
-make dist              # Build production app  
-make dmg               # Build macOS installer
+# Run in development mode
+npm run electron:dev    # Opens app with dev server
 
-# Quality checks
-make check      # Format, lint, typecheck, test
-make format     # Format code
-make test       # Run tests
+# Build production DMG
+npm run build:frontend  # Build frontend first
+npm run dist:mac       # Creates DMG files in dist/
+```
 
-# Building
-make build-backend   # Create binary
-make build-frontend  # Build frontend
+### Web Development
+```bash
+# Backend (Terminal 1)
+cd backend && deno task dev        # http://localhost:8080
+
+# Frontend (Terminal 2) 
+cd frontend && npm run dev         # http://localhost:3000
+```
+
+### Quality Checks
+```bash
+make check      # Format, lint, typecheck, test all components
+make format     # Format code with prettier
+make test       # Run frontend and backend tests
+make lint       # Lint TypeScript code
+```
+
+### Building
+```bash
+make build-backend   # Build Deno binary
+make build-frontend  # Build React frontend
+npm run dist        # Build all platforms (DMG, Windows, Linux)
 ```
 
 ## Contributing
