@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import type { ProjectInfo, ConversationSummary, ConversationHistory } from "../../shared/types";
+import type { ProjectInfo, ConversationSummary, ConversationHistory } from "../../../shared/types";
 import { getAgentProjectsUrl, getAgentHistoriesUrl, getAgentConversationUrl } from "../config/api";
 
 interface RemoteAgentHistoryCache {
@@ -65,7 +65,6 @@ export function useRemoteAgentHistory() {
     agentEndpoint: string, 
     projectId: string
   ): Promise<ConversationSummary[]> => {
-    const cacheKey = `histories.${projectId}`;
     if (isCacheValid(agentEndpoint, 'histories') && cache[agentEndpoint].histories?.[projectId]) {
       return cache[agentEndpoint].histories![projectId];
     }

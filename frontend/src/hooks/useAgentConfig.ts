@@ -254,6 +254,7 @@ export function useAgentConfig() {
 
   return {
     config,
+    agents: config.agents, // Add this for compatibility
     updateConfig,
     addAgent,
     updateAgent,

@@ -1,7 +1,7 @@
 import { Copy, ChevronDown, ChevronRight, History, MessageSquare } from "lucide-react";
 import { useState, useCallback, useEffect } from "react";
 import type { ChatRequest, ChatMessage, ExecutionStep } from "../../types";
-import type { ConversationSummary } from "../../../shared/types";
+import type { ConversationSummary } from "../../../../shared/types";
 import { useAgentConfig } from "../../hooks/useAgentConfig";
 import { useTheme } from "../../hooks/useTheme";
 import { useClaudeStreaming } from "../../hooks/useClaudeStreaming";
@@ -242,20 +242,21 @@ export function AgentDetailView({
         console.warn("Could not search agent projects for session:", error);
       }
       
-      // Fallback to a default if we couldn't find the project
-      const projectToUse = foundProject || "default";
+      // Continue if no project found
+      if (!foundProject) {
+        console.warn("No matching project found for conversation");
+        setHistoryError("Could not find the project for this conversation");
+        return;
+      }
       
       // Get the conversation directly from remote agent
-      console.log(`🔍 Loading conversation ${sessionId} from project ${foundProject || "unknown"}`);
+      console.log(`🔍 Loading conversation ${sessionId} from project ${foundProject}`);
       
-      let conversation: any = null;
-      if (foundProject) {
-        conversation = await remoteHistory.fetchAgentConversation(
-          agent.apiEndpoint,
-          foundProject,
-          sessionId
-        );
-      }
+      const conversation = await remoteHistory.fetchAgentConversation(
+        agent.apiEndpoint,
+        foundProject,
+        sessionId
+      );
       
       if (conversation && conversation.messages && conversation.messages.length > 0) {
         console.log("📚 Loading historical conversation:", {
@@ -265,7 +266,7 @@ export function AgentDetailView({
         });
 
         // Convert the conversation to frontend message format
-        const convertedMessages = convertConversationHistory(conversation.messages);
+        const convertedMessages = convertConversationHistory(conversation.messages as any);
 
         // Load messages into the agent's session
         loadHistoricalMessages(convertedMessages, sessionId, agentId, false);
