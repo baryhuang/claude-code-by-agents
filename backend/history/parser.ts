@@ -68,7 +68,7 @@ async function parseHistoryFile(
         messages.push(parsed);
 
         // Track message IDs from assistant messages
-        if (parsed.message?.role === "assistant" && parsed.message?.id) {
+        if (parsed.message?.role === "assistant" && "id" in parsed.message && parsed.message.id) {
           messageIds.add(parsed.message.id);
         }
 

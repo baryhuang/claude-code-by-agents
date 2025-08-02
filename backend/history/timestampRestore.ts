@@ -18,7 +18,7 @@ export function restoreTimestamps(
 
   // First pass: collect earliest timestamps for each message.id
   for (const msg of messages) {
-    if (msg.type === "assistant" && msg.message?.id) {
+    if (msg.type === "assistant" && msg.message && "id" in msg.message && msg.message.id) {
       const messageId = msg.message.id;
       if (!timestampMap.has(messageId)) {
         timestampMap.set(messageId, msg.timestamp);
@@ -34,7 +34,7 @@ export function restoreTimestamps(
 
   // Second pass: restore timestamps and return updated messages
   return messages.map((msg) => {
-    if (msg.type === "assistant" && msg.message?.id) {
+    if (msg.type === "assistant" && msg.message && "id" in msg.message && msg.message.id) {
       const restoredTimestamp = timestampMap.get(msg.message.id);
       if (restoredTimestamp) {
         return {

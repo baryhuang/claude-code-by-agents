@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import type { ConversationSummary } from "../../../shared/types";
-import { getHistoriesUrl, getProjectsUrl } from "../config/api";
 import { useAgentConfig } from "../hooks/useAgentConfig";
 import { useRemoteAgentHistory } from "../hooks/useRemoteAgentHistory";
 
@@ -26,7 +25,7 @@ export function HistoryModal({ isOpen, onClose, onConversationSelect, activeAgen
   const [hasAttemptedLoad, setHasAttemptedLoad] = useState(false);
   // No need for tabs anymore since we're showing only one agent's history
   
-  const { getOrchestratorAgent, config } = useAgentConfig();
+  const { config } = useAgentConfig();
   const agents = config.agents;
   const remoteHistory = useRemoteAgentHistory();
 
@@ -111,7 +110,7 @@ export function HistoryModal({ isOpen, onClose, onConversationSelect, activeAgen
     loadAgentConversations();
   }, [isOpen, activeAgentId, agents, remoteHistory, hasAttemptedLoad]);
 
-  const handleConversationSelect = (sessionId: string, isLocal: boolean, agentId?: string) => {
+  const handleConversationSelect = (sessionId: string) => {
     // Pass the active agent ID since we're viewing a specific agent's history
     onConversationSelect(sessionId, activeAgentId);
     onClose();
@@ -191,9 +190,7 @@ export function HistoryModal({ isOpen, onClose, onConversationSelect, activeAgen
                       <div
                         key={conversation.sessionId}
                         onClick={() => handleConversationSelect(
-                          conversation.sessionId, 
-                          activeAgentData.isLocal, 
-                          activeAgentData.agentId
+                          conversation.sessionId
                         )}
                         className="p-4 bg-slate-50 dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500 transition-colors cursor-pointer shadow-sm hover:shadow-md"
                       >
