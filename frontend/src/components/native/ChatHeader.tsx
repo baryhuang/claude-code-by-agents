@@ -1,4 +1,4 @@
-import { Users, User, MoreHorizontal, Download, Trash2, History } from "lucide-react";
+import { Users, User, MoreHorizontal, Download, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useAgentConfig } from "../../hooks/useAgentConfig";
 
