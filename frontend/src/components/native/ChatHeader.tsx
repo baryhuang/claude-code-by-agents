@@ -6,7 +6,6 @@ interface ChatHeaderProps {
   currentMode: "group" | "agent";
   activeAgentId: string | null;
   onModeToggle: () => void;
-  onShowHistory?: () => void;
 }
 
 const getAgentColor = (agentId: string) => {
@@ -20,7 +19,7 @@ const getAgentColor = (agentId: string) => {
   return colorMap[agentId] || "var(--claude-text-accent)";
 };
 
-export function ChatHeader({ currentMode, activeAgentId, onShowHistory }: ChatHeaderProps) {
+export function ChatHeader({ currentMode, activeAgentId }: ChatHeaderProps) {
   const [showMenu, setShowMenu] = useState(false);
   const { getAgentById } = useAgentConfig();
   const currentAgent = activeAgentId ? getAgentById(activeAgentId) : null;
@@ -58,17 +57,6 @@ export function ChatHeader({ currentMode, activeAgentId, onShowHistory }: ChatHe
       </div>
 
       <div className="chat-header-actions app-no-drag">
-        {/* History Button - Only show for individual agents, not group chat */}
-        {onShowHistory && currentMode === "agent" && activeAgentId && (
-          <button
-            onClick={onShowHistory}
-            className="chat-header-button"
-            title="View conversation history"
-          >
-            <History size={14} />
-          </button>
-        )}
-        
         {/* More Menu */}
         <div style={{ position: "relative" }}>
           <button

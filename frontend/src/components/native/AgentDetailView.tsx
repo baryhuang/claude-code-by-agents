@@ -1,11 +1,14 @@
-import { Copy, ChevronDown, ChevronRight } from "lucide-react";
+import { Copy, ChevronDown, ChevronRight, History, MessageSquare } from "lucide-react";
 import { useState, useCallback, useEffect } from "react";
 import type { ChatRequest, ChatMessage, ExecutionStep } from "../../types";
+import type { ConversationSummary } from "../../../shared/types";
 import { useAgentConfig } from "../../hooks/useAgentConfig";
 import { useTheme } from "../../hooks/useTheme";
 import { useClaudeStreaming } from "../../hooks/useClaudeStreaming";
 import { usePermissions } from "../../hooks/chat/usePermissions";
 import { useAbortController } from "../../hooks/chat/useAbortController";
+import { useRemoteAgentHistory } from "../../hooks/useRemoteAgentHistory";
+import { useHistoryLoader } from "../../hooks/useHistoryLoader";
 import { ChatInput } from "./ChatInput";
 import { ChatMessages } from "../chat/ChatMessages";
 import { PermissionDialog } from "../PermissionDialog";
@@ -38,6 +41,7 @@ interface AgentDetailViewProps {
   // Helper functions
   switchToAgent: (agentId: string) => void;
   getOrCreateAgentSession: (agentId: string) => any;
+  loadHistoricalMessages: (messages: any[], sessionId: string, agentId?: string, useAgentRoom?: boolean) => void;
 }
 
 const getAgentColor = (agentId: string) => {
@@ -84,19 +88,132 @@ export function AgentDetailView({
   startRequest,
   switchToAgent,
   getOrCreateAgentSession,
+  loadHistoricalMessages,
 }: AgentDetailViewProps) {
   const { getAgentById, config } = useAgentConfig();
   const agent = getAgentById(agentId);
   const [showConfig, setShowConfig] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
+  const [hasAttemptedHistoryLoad, setHasAttemptedHistoryLoad] = useState(false);
   
   useTheme(); // For theme switching support
   const { processStreamLine } = useClaudeStreaming();
   const { abortRequest, createAbortHandler } = useAbortController();
+  const remoteHistory = useRemoteAgentHistory();
+  const historyLoader = useHistoryLoader();
 
   // Switch to this agent when component mounts
   useEffect(() => {
     switchToAgent(agentId);
   }, [agentId, switchToAgent]);
+
+  // Load conversation history for this agent
+  const loadAgentHistory = useCallback(async () => {
+    if (!agent || hasAttemptedHistoryLoad) {
+      return;
+    }
+
+    try {
+      setHistoryLoading(true);
+      setHistoryError(null);
+      setHasAttemptedHistoryLoad(true);
+
+      console.log(`📚 Loading history for agent: ${agent.name} (${agent.id})`);
+
+      // Get projects for this specific agent
+      const agentProjects = await remoteHistory.fetchAgentProjects(agent.apiEndpoint);
+      console.log(`📁 Found ${agentProjects.length} projects for agent ${agent.name}`);
+      
+      // Collect all conversations from all projects for this agent
+      const allAgentConversations: ConversationSummary[] = [];
+      
+      for (const project of agentProjects) {
+        try {
+          console.log(`📖 Loading conversations from project: ${project.path}`);
+          const projectHistories = await remoteHistory.fetchAgentHistories(
+            agent.apiEndpoint, 
+            project.encodedName
+          );
+          console.log(`💬 Found ${projectHistories.length} conversations in project ${project.path}`);
+          allAgentConversations.push(...projectHistories);
+        } catch (projectError) {
+          console.warn(`Failed to load project ${project.path} for agent ${agent.name}:`, projectError);
+        }
+      }
+      
+      // Sort conversations by start time (newest first)
+      allAgentConversations.sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
+      
+      setConversations(allAgentConversations);
+      console.log(`✅ Loaded ${allAgentConversations.length} total conversations for agent ${agent.name}`);
+      
+    } catch (err) {
+      console.error("❌ Failed to load agent conversations:", err);
+      setHistoryError(err instanceof Error ? err.message : "Failed to load conversations");
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [agent, remoteHistory, hasAttemptedHistoryLoad]);
+
+  // Handle conversation selection from history
+  const handleHistoryConversationSelect = useCallback(async (sessionId: string) => {
+    try {
+      if (!agent) return;
+
+      // Try to find the conversation in available projects
+      let foundProject = null;
+      
+      try {
+        const agentProjects = await remoteHistory.fetchAgentProjects(agent.apiEndpoint);
+        // Try each project until we find one with this session
+        for (const project of agentProjects) {
+          try {
+            const conversation = await remoteHistory.fetchAgentConversation(
+              agent.apiEndpoint,
+              project.encodedName,
+              sessionId
+            );
+            if (conversation) {
+              foundProject = project.encodedName;
+              break;
+            }
+          } catch {
+            // Continue searching in other projects
+          }
+        }
+      } catch (error) {
+        console.warn("Could not search agent projects for session:", error);
+      }
+      
+      // Fallback to a default if we couldn't find the project
+      const projectToUse = foundProject || "default";
+      
+      // Load the historical conversation
+      await historyLoader.loadHistory(projectToUse, sessionId, agentId);
+      
+      // If we have historical messages, populate the current chat
+      if (historyLoader.messages.length > 0) {
+        console.log("📚 Loading historical conversation:", {
+          sessionId,
+          agentId,
+          messageCount: historyLoader.messages.length,
+        });
+
+        // Load messages into the agent's session
+        loadHistoricalMessages(historyLoader.messages, sessionId, agentId, false);
+        
+        console.log("✅ Historical conversation loaded successfully");
+      } else {
+        console.warn("⚠️ No messages found in historical conversation");
+      }
+    } catch (error) {
+      console.error("❌ Failed to load conversation:", error);
+      setHistoryError(error instanceof Error ? error.message : "Failed to load conversation");
+    }
+  }, [agent, remoteHistory, historyLoader, agentId, loadHistoricalMessages]);
 
   // Get agent-specific session data
   const agentSession = getOrCreateAgentSession(agentId);
@@ -664,37 +781,302 @@ export function AgentDetailView({
           </div>
         </div>
 
-        {/* Message History - Main Content with Streaming */}
+        {/* Message History - Main Content with History Panel */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-          <h2 style={{ 
-            fontSize: "16px", 
-            fontWeight: 600, 
+          {/* Tab Header */}
+          <div style={{ 
+            display: "flex", 
+            alignItems: "center", 
+            justifyContent: "space-between",
             margin: "24px 0 16px 0",
-            color: "var(--claude-text-primary)",
             flexShrink: 0
           }}>
-            Conversation
-            {agentMessages.length > 0 && (
+            <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+              <button
+                onClick={() => setShowHistory(false)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  background: !showHistory ? "var(--claude-border)" : "transparent",
+                  border: "1px solid var(--claude-border)",
+                  padding: "8px 12px",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  color: !showHistory ? "var(--claude-text-primary)" : "var(--claude-text-muted)",
+                  transition: "all 0.15s ease"
+                }}
+              >
+                <MessageSquare size={14} />
+                Current Chat
+                {agentMessages.length > 0 && (
+                  <span style={{
+                    background: "var(--claude-text-accent)",
+                    color: "white",
+                    fontSize: "11px",
+                    padding: "2px 6px",
+                    borderRadius: "10px",
+                    minWidth: "18px",
+                    textAlign: "center"
+                  }}>
+                    {agentMessages.length}
+                  </span>
+                )}
+              </button>
+              
+              <button
+                onClick={() => {
+                  setShowHistory(true);
+                  if (!hasAttemptedHistoryLoad) {
+                    loadAgentHistory();
+                  }
+                }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  background: showHistory ? "var(--claude-border)" : "transparent",
+                  border: "1px solid var(--claude-border)",
+                  padding: "8px 12px",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  color: showHistory ? "var(--claude-text-primary)" : "var(--claude-text-muted)",
+                  transition: "all 0.15s ease"
+                }}
+              >
+                <History size={14} />
+                History
+                {conversations.length > 0 && (
+                  <span style={{
+                    background: "var(--claude-text-accent)",
+                    color: "white",
+                    fontSize: "11px",
+                    padding: "2px 6px",
+                    borderRadius: "10px",
+                    minWidth: "18px",
+                    textAlign: "center"
+                  }}>
+                    {conversations.length}
+                  </span>
+                )}
+              </button>
+            </div>
+            
+            {!showHistory && agentMessages.length > 0 && (
               <span style={{
                 fontSize: "12px",
-                fontWeight: 400,
-                color: "var(--claude-text-muted)",
-                marginLeft: "8px"
+                color: "var(--claude-text-muted)"
               }}>
                 Last activity: {lastActivity}
               </span>
             )}
-          </h2>
+          </div>
           
-          {/* Messages container that allows ChatMessages to handle its own scrolling */}
-          <div className="messages-container" style={{ flex: 1, minHeight: 0 }}>
-            <ChatMessages
-              messages={agentMessages}
-              isLoading={isLoading}
-              onExecuteStep={handleExecuteStep}
-              onExecutePlan={handleExecutePlan}
-              currentAgentId={agentId}
-            />
+          {/* Content Area */}
+          <div style={{ flex: 1, minHeight: 0 }}>
+            {!showHistory ? (
+              /* Current Conversation */
+              <div className="messages-container" style={{ height: "100%" }}>
+                <ChatMessages
+                  messages={agentMessages}
+                  isLoading={isLoading}
+                  onExecuteStep={handleExecuteStep}
+                  onExecutePlan={handleExecutePlan}
+                  currentAgentId={agentId}
+                />
+              </div>
+            ) : (
+              /* History Panel */
+              <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+                {historyLoading ? (
+                  <div style={{ 
+                    flex: 1, 
+                    display: "flex", 
+                    alignItems: "center", 
+                    justifyContent: "center" 
+                  }}>
+                    <div style={{ textAlign: "center" }}>
+                      <div style={{
+                        width: "32px",
+                        height: "32px",
+                        border: "2px solid var(--claude-border)",
+                        borderTop: "2px solid var(--claude-text-accent)",
+                        borderRadius: "50%",
+                        animation: "spin 1s linear infinite",
+                        margin: "0 auto 16px"
+                      }}></div>
+                      <p style={{ color: "var(--claude-text-muted)", fontSize: "14px" }}>
+                        Loading conversation history...
+                      </p>
+                    </div>
+                  </div>
+                ) : historyError ? (
+                  <div style={{ 
+                    flex: 1, 
+                    display: "flex", 
+                    alignItems: "center", 
+                    justifyContent: "center" 
+                  }}>
+                    <div style={{ textAlign: "center", maxWidth: "400px" }}>
+                      <div style={{
+                        width: "48px",
+                        height: "48px",
+                        margin: "0 auto 16px",
+                        background: "var(--claude-error-bg, #fef2f2)",
+                        borderRadius: "50%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center"
+                      }}>
+                        <svg style={{ width: "24px", height: "24px", color: "var(--claude-error, #ef4444)" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <h3 style={{ 
+                        fontSize: "16px", 
+                        fontWeight: 600, 
+                        margin: "0 0 8px 0",
+                        color: "var(--claude-text-primary)"
+                      }}>
+                        Error Loading History
+                      </h3>
+                      <p style={{ 
+                        fontSize: "14px", 
+                        color: "var(--claude-text-muted)",
+                        margin: 0
+                      }}>
+                        {historyError}
+                      </p>
+                    </div>
+                  </div>
+                ) : conversations.length === 0 ? (
+                  <div style={{ 
+                    flex: 1, 
+                    display: "flex", 
+                    alignItems: "center", 
+                    justifyContent: "center" 
+                  }}>
+                    <div style={{ textAlign: "center" }}>
+                      <div style={{
+                        width: "48px",
+                        height: "48px",
+                        margin: "0 auto 16px",
+                        background: "var(--claude-border)",
+                        borderRadius: "50%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center"
+                      }}>
+                        <History style={{ width: "24px", height: "24px", color: "var(--claude-text-muted)" }} />
+                      </div>
+                      <h3 style={{ 
+                        fontSize: "16px", 
+                        fontWeight: 600, 
+                        margin: "0 0 8px 0",
+                        color: "var(--claude-text-primary)"
+                      }}>
+                        No Conversations Yet
+                      </h3>
+                      <p style={{ 
+                        fontSize: "14px", 
+                        color: "var(--claude-text-muted)",
+                        margin: 0
+                      }}>
+                        Start chatting with this agent to see conversation history here.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  /* History List */
+                  <div style={{ 
+                    height: "100%", 
+                    overflow: "auto",
+                    padding: "0 8px"
+                  }}>
+                    {conversations.map((conversation) => (
+                      <div
+                        key={conversation.sessionId}
+                        onClick={() => handleHistoryConversationSelect(conversation.sessionId)}
+                        style={{
+                          padding: "16px",
+                          margin: "0 0 12px 0",
+                          background: "var(--claude-message-bg)",
+                          border: "1px solid var(--claude-border)",
+                          borderRadius: "8px",
+                          cursor: "pointer",
+                          transition: "all 0.15s ease"
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor = "var(--claude-text-accent)";
+                          e.currentTarget.style.transform = "translateY(-1px)";
+                          e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor = "var(--claude-border)";
+                          e.currentTarget.style.transform = "translateY(0)";
+                          e.currentTarget.style.boxShadow = "none";
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "start", justifyContent: "space-between" }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+                              <h4 style={{
+                                fontSize: "14px",
+                                fontWeight: 500,
+                                margin: 0,
+                                color: "var(--claude-text-primary)",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap"
+                              }}>
+                                Session: {conversation.sessionId.substring(0, 8)}...
+                              </h4>
+                              <span style={{
+                                fontSize: "11px",
+                                background: "var(--claude-text-accent)",
+                                color: "white",
+                                padding: "2px 6px",
+                                borderRadius: "4px"
+                              }}>
+                                Remote
+                              </span>
+                            </div>
+                            <p style={{
+                              fontSize: "12px",
+                              color: "var(--claude-text-muted)",
+                              margin: "0 0 8px 0"
+                            }}>
+                              {new Date(conversation.startTime).toLocaleString()} • {conversation.messageCount} messages
+                            </p>
+                            <p style={{
+                              fontSize: "13px",
+                              color: "var(--claude-text-secondary)",
+                              margin: 0,
+                              lineHeight: "1.4",
+                              display: "-webkit-box",
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: "vertical",
+                              overflow: "hidden"
+                            }}>
+                              {conversation.lastMessagePreview}
+                            </p>
+                          </div>
+                          <div style={{ marginLeft: "12px", flexShrink: 0 }}>
+                            <svg style={{ width: "16px", height: "16px", color: "var(--claude-text-muted)" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

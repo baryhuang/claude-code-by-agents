@@ -11,7 +11,6 @@ import { ChatMessages } from "../chat/ChatMessages";
 import { ChatInput } from "./ChatInput";
 import { AgentDetailView } from "./AgentDetailView";
 import { PermissionDialog } from "../PermissionDialog";
-import { HistoryModal } from "../HistoryModal";
 import { getChatUrl } from "../../config/api";
 import { KEYBOARD_SHORTCUTS } from "../../utils/constants";
 import { useAgentConfig } from "../../hooks/useAgentConfig";
@@ -22,7 +21,6 @@ import { debugStreamingConnection, debugStreamingChunk, debugStreamingPerformanc
 
 export function AgentHubPage() {
   const [currentMode, setCurrentMode] = useState<"group" | "agent">("group");
-  const [showHistoryModal, setShowHistoryModal] = useState(false);
   
   useTheme(); // For theme switching support
   const { processStreamLine } = useClaudeStreaming();
@@ -100,9 +98,6 @@ export function AgentHubPage() {
     setCurrentMode("group");
   }, []);
 
-  const handleShowHistory = useCallback(() => {
-    setShowHistoryModal(true);
-  }, []);
 
   const handleHistoryConversationSelect = useCallback(async (sessionId: string, agentId?: string) => {
     try {
@@ -692,7 +687,6 @@ export function AgentHubPage() {
           currentMode={currentMode}
           activeAgentId={currentMode === "agent" ? activeAgentId : null}
           onModeToggle={handleModeToggle}
-          onShowHistory={handleShowHistory}
         />
 
         {/* Main Content Area */}
@@ -720,6 +714,7 @@ export function AgentHubPage() {
             startRequest={startRequest}
             switchToAgent={switchToAgent}
             getOrCreateAgentSession={getOrCreateAgentSession}
+            loadHistoricalMessages={loadHistoricalMessages}
           />
         ) : (
           /* Chat Interface */
@@ -762,13 +757,6 @@ export function AgentHubPage() {
         />
       )}
 
-      {/* History Modal */}
-      <HistoryModal
-        isOpen={showHistoryModal}
-        onClose={() => setShowHistoryModal(false)}
-        onConversationSelect={handleHistoryConversationSelect}
-        activeAgentId={activeAgentId}
-      />
     </div>
   );
 }
