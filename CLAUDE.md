@@ -4,35 +4,7 @@ Agentrooms is a multi-agent workspace that provides a web-based interface for co
 
 ## Code Quality
 
-This project uses automated quality checks to ensure consistent code standards:
-
-- **Lefthook**: Git hooks manager that runs `make check` before every commit
-- **Quality Commands**: Use `make check` to run all quality checks manually  
-- **CI/CD**: GitHub Actions runs the same quality checks on every push
-
-The pre-commit hook prevents commits with formatting, linting, or test failures.
-
-### Setup for New Contributors
-
-1. **Install Lefthook**: 
-   ```bash
-   # macOS
-   brew install lefthook
-   
-   # Or download from https://github.com/evilmartians/lefthook/releases
-   ```
-
-2. **Install hooks**:
-   ```bash
-   lefthook install
-   ```
-
-3. **Verify setup**:
-   ```bash
-   lefthook run pre-commit
-   ```
-
-The `.lefthook.yml` configuration is tracked in the repository, ensuring consistent quality checks across all contributors.
+Use `make check` to run quality checks before commits. CI/CD runs the same checks automatically.
 
 ## Architecture
 
@@ -583,291 +555,42 @@ grep "@anthropic-ai/claude-code" frontend/package.json backend/deno.json backend
 
 ### Pull Request Process
 
-1. Create a feature branch from `main`: `git checkout -b feature/your-feature-name`
-2. Make your changes and commit them (Lefthook runs `make check` automatically)
-3. Push your branch and create a pull request
-4. **Add appropriate labels** to categorize the changes (see Labels section below)
-5. **Include essential PR information** as outlined in the Labels section
-6. Request review and address feedback
-7. Merge after approval and CI passes
+Create feature branch, make changes, push, and create PR with appropriate labels. CHANGELOG.md is auto-managed.
 
-#### Creating Pull Requests
+### Release Process
 
-Create pull requests with appropriate labels and essential information:
-
-```bash
-gh pr create --title "Your PR Title" \
-  --label "appropriate,labels" \
-  --body "Brief description"
-```
-
-**Note**: CHANGELOG.md is now automatically managed by tagpr - no manual updates needed!
-
-### Labels
-
-The project uses the following labels for categorizing pull requests and issues:
-
-- 🐛 **`bug`** - Bug fixes (non-breaking changes that fix issues)
-- ✨ **`feature`** - New features (non-breaking changes that add functionality)
-- 💥 **`breaking`** - Breaking changes (changes that would cause existing functionality to not work as expected)
-- 📚 **`documentation`** - Documentation improvements or additions
-- ⚡ **`performance`** - Performance improvements
-- 🔨 **`refactor`** - Code refactoring (no functional changes)
-- 🧪 **`test`** - Adding or updating tests
-- 🔧 **`chore`** - Maintenance, dependencies, tooling updates
-- 🖥️ **`backend`** - Backend-related changes
-- 🎨 **`frontend`** - Frontend-related changes
-
-**For Claude**: When creating PRs, always include:
-
-1. **Type of Change checkboxes**: Include the checkbox list from the template to categorize changes:
-   ```
-   - [ ] 🐛 `bug` - Bug fix (non-breaking change which fixes an issue)
-   - [ ] ✨ `feature` - New feature (non-breaking change which adds functionality)
-   - [ ] 💥 `breaking` - Breaking change
-   - [ ] 📚 `documentation` - Documentation update
-   - [ ] ⚡ `performance` - Performance improvement
-   - [ ] 🔨 `refactor` - Code refactoring
-   - [ ] 🧪 `test` - Adding or updating tests
-   - [ ] 🔧 `chore` - Maintenance, dependencies, tooling
-   - [ ] 🖥️ `backend` - Backend-related changes
-   - [ ] 🎨 `frontend` - Frontend-related changes
-   ```
-2. **Description**: Brief summary of what changed and why
-3. **GitHub labels**: Add corresponding labels using `--label` flag: `gh pr create --label "feature,documentation"`
-4. **Test plan**: Include testing information if relevant
-
-Multiple labels can be applied if the PR covers multiple areas.
-
-### Release Process (Automated with tagpr)
-
-1. **Feature PRs merged to main** → tagpr automatically creates/updates release PR
-2. **Add version labels** to PRs if needed:
-   - No label = patch version (v1.0.0 → v1.0.1)
-   - `minor` label = minor version (v1.0.0 → v1.1.0)
-   - `major` label = major version (v1.0.0 → v2.0.0)
-3. **Review and merge release PR** → tagpr creates git tag automatically
-4. **GitHub Actions builds binaries** and creates GitHub Release automatically
-5. Update documentation if needed
-
-**Manual override**: Edit `backend/VERSION` file directly if specific version needed
-
-### GitHub Sub-Issues API
-
-**For Claude**: When creating sub-issues to break down larger features:
-
-```bash
-# 1. Create the sub-issue normally
-gh issue create --title "Sub-issue title" --body "..." --label "feature,enhancement"
-
-# 2. Get the sub-issue ID
-SUB_ISSUE_ID=$(gh api repos/owner/repo/issues/ISSUE_NUMBER --jq '.id')
-
-# 3. Add it as sub-issue to parent issue
-gh api repos/owner/repo/issues/PARENT_ISSUE_NUMBER/sub_issues \
-  --method POST \
-  --field sub_issue_id=$SUB_ISSUE_ID
-
-# 4. Verify the relationship
-gh api repos/owner/repo/issues/PARENT_ISSUE_NUMBER/sub_issues
-```
-
-**Key points**:
-- Use issue **ID** (not number) for `sub_issue_id` parameter
-- Endpoint is `/sub_issues` (plural) for POST operations
-- Parent issue will show `sub_issues_summary` with total/completed counts
-- Sub-issues automatically link to parent in GitHub UI
-
-### Viewing Copilot Review Comments
-
-**For Claude**: Copilot inline review comments are not shown in regular `gh pr view` output. To see them:
-
-```bash
-# View all inline review comments from Copilot
-gh api repos/owner/repo/pulls/PR_NUMBER/comments
-
-# Example for this repository
-gh api repos/sugyan/claude-code-webui/pulls/39/comments
-```
-
-**Why this matters**:
-- Copilot provides valuable code improvement suggestions
-- These comments include security, performance, and code quality feedback
-- They appear as inline comments on specific lines of code
-- Missing these can lead to suboptimal code being merged
-- Always check for Copilot feedback when reviewing PRs
+Releases are automated via tagpr. Use version labels (`minor`, `major`) on PRs if needed, otherwise defaults to patch version.
 
 **Important for Claude**: Always run commands from the project root directory. When using `cd` commands for backend/frontend, use full paths like `cd /path/to/project/backend` to avoid getting lost in subdirectories.
 
-## Technical Implementation Details & Testing Guide
+## Project-Specific Technical Context
 
-### Multi-Agent Architecture Specifics
+### Multi-Agent Architecture
 
-#### Agent Communication Pattern
-- **Orchestrator Agent**: Lives locally in Electron app, manages multi-agent workflows
-- **Remote Worker Agents**: Run Claude Code on remote machines, accessible via HTTP endpoints
-- **Key Design Principle**: Main chat room persistence uses application state (not Claude Code), individual agent sessions use Claude Code SDK for continuity
+**Key Constraint**: Main chat room uses application state persistence (NOT Claude Code history). Individual agent sessions use Claude Code SDK for continuity.
 
-#### Critical Path Dependencies
-1. **Agent Configuration Loading**: `useAgentConfig` hook must load before any agent operations
-2. **Session Management**: Each agent maintains independent session state via `getOrCreateAgentSession(agentId)`
-3. **Message Attribution**: All messages must include `agentId` for proper routing and display
-4. **Working Directory Context**: Each agent's `workingDirectory` determines Claude Code execution context
+**Remote History Implementation**: 
+- History only appears in AgentDetailView, never main chat
+- Remote agents expose `~/.claude/projects/` via `/api/agent-projects`, `/api/agent-histories/:project`, `/api/agent-conversations/:project/:session`
+- Agent-specific filtering: projects filtered by agent's working directory + description keywords
+- 5-minute caching to prevent API spam
 
-### Remote Agent History Architecture
+### Critical State Management
 
-#### Implementation Constraints
-- **Location**: History only appears in individual agent detail views, NOT main chat room
-- **Source**: Remote agents expose their `~/.claude/projects/` via API endpoints
-- **Filtering**: Agent-specific project filtering based on working directory keywords and description
-- **Caching**: 5-minute cache for remote history requests to reduce API load
+**useAgentConfig Hook**: Must return `agents: config.agents` for legacy component compatibility
 
-#### Critical API Flow
-```
-1. GET /api/agent-projects → Returns projects with history directories
-2. Filter projects by agent keywords (working dir + description + ID)
-3. GET /api/agent-histories/:encodedProjectName → Get conversation summaries
-4. GET /api/agent-conversations/:encodedProjectName/:sessionId → Load full conversation
-```
+**Loading State Bug Prevention**: Always use `hasAttemptedHistoryLoad` flags and `finally` blocks to prevent infinite loading loops
 
-#### Error Handling Requirements
-- **Network Failures**: Show specific error messages, not generic "failed to load"
-- **Empty History**: Clear "No conversations yet" state with call-to-action
-- **Loading States**: Must prevent infinite loops via `hasAttemptedHistoryLoad` flags
-- **Conversation Loading**: Add `finally` blocks to ensure loading states are cleared
+**Agent Isolation**: Each agent maintains separate `agentSessions[agentId].messages` and `sessionId` to prevent cross-contamination
 
-### Frontend State Management Patterns
+### Electron Production Issues
 
-#### useAgentConfig Hook Architecture
-```typescript
-// Required return shape for compatibility
-return {
-  config,
-  agents: config.agents, // Critical for legacy components
-  updateConfig,
-  // ... other methods
-}
-```
+**Frontend Loading**: Packaged apps must use `path.join(__dirname, '../frontend/dist/index.html')` not `process.resourcesPath` paths
 
-#### Message Flow Patterns
-- **User Input**: ChatInput → handleSendMessage → addMessage(useAgentRoom: false)
-- **Agent Responses**: Streaming → processStreamLine → updateLastMessage
-- **Historical Loading**: loadHistoricalMessages(messages, sessionId, agentId, useAgentRoom: false)
+**Build Requirement**: Must run `vite build` (not `tsc + vite build`) before `electron-builder` to avoid TypeScript blocking errors
 
-#### State Isolation Requirements
-- **Session IDs**: Each agent maintains separate `sessionId` for Claude continuity
-- **Message Arrays**: `agentSessions[agentId].messages` stores agent-specific history
-- **Loading States**: Per-agent loading states to prevent cross-agent interference
+### UX Requirements
 
-### Electron Packaging & Distribution
+**History Panel**: "Current Chat" vs "History" tabs in AgentDetailView. After loading conversation, auto-switch back to "Current Chat" tab.
 
-#### Critical Path Resolution
-```javascript
-// Production frontend loading
-const indexPath = app.isPackaged 
-  ? path.join(__dirname, '../frontend/dist/index.html')  // In app.asar
-  : path.join(__dirname, '../frontend/dist/index.html'); // Development
-```
-
-#### Build Process Dependencies
-1. **Frontend Build**: Must run `vite build` before `electron-builder`
-2. **File Inclusion**: `electron-builder` copies `frontend/dist/**/*` to app.asar
-3. **Code Signing**: Uses certificate `FA8011BD47CC466BCF8A1497949312B03D6D1CE2`
-4. **DMG Creation**: Separate Intel (x64) and ARM64 builds for macOS
-
-#### Testing Requirements
-- **Development**: `npm run electron:dev` should load frontend from localhost:3000
-- **Production**: DMG should load frontend from app.asar bundle
-- **Fallback Paths**: Must try multiple paths if primary loading fails
-
-### User Experience Design Constraints
-
-#### History Panel UX Rules
-- **Tab Interface**: "Current Chat" vs "History" tabs in AgentDetailView
-- **Auto-Switch**: After loading historical conversation, switch back to "Current Chat" tab
-- **Visual Feedback**: Loading spinners, error states, empty states with clear messaging
-- **Conversation Previews**: Show session ID (truncated), timestamp, message count, last message preview
-
-#### Agent Filtering Logic
-```javascript
-// Keywords extraction for project filtering
-const agentKeywords = [
-  ...agentWorkingDir.split(/[/\\-_\s]+/).filter(Boolean),
-  ...agent.description.toLowerCase().split(/[\s,.-]+/).filter(Boolean),
-  agent.id.toLowerCase()
-];
-
-// Relevance check
-const isRelevant = agentKeywords.some(keyword => 
-  keyword.length > 2 && projectPath.includes(keyword)
-);
-```
-
-#### Error Message Guidelines
-- **Network Errors**: "Could not connect to agent at [endpoint]"
-- **Project Not Found**: "Could not find the project for this conversation"
-- **Empty Results**: "No conversations yet. Start chatting with this agent to see conversation history here."
-- **Loading Failures**: "Failed to load conversation: [specific error]"
-
-### Critical Testing Scenarios
-
-#### Mac App Loading
-1. **DMG Installation**: Install from DMG, launch app, verify frontend loads
-2. **Development Mode**: `NODE_ENV=development electron .` should use dev server
-3. **Production Mode**: Packaged app should load from app.asar without errors
-4. **Console Logging**: Check for "Loading frontend from:" debug messages
-
-#### Remote History Integration
-1. **Empty Agent**: No projects → "No conversations yet" state
-2. **Network Failure**: Offline agent → specific error message
-3. **Successful Load**: Multiple conversations → properly filtered and displayed
-4. **Conversation Selection**: Click conversation → loads in current chat, switches to "Current Chat" tab
-
-#### Cross-Agent Isolation
-1. **Session Separation**: Agent A conversation should not appear in Agent B history
-2. **Project Filtering**: Agent with working dir `/project/frontend` should only see frontend-related projects
-3. **State Independence**: Loading history for Agent A should not affect Agent B loading state
-
-### Performance Optimization Patterns
-
-#### Caching Strategies
-- **Remote History**: 5-minute cache prevents repeated API calls
-- **Agent Config**: LocalStorage + Electron persistent storage for configuration
-- **Message History**: In-memory per-agent session storage
-
-#### Loading State Management
-```javascript
-// Prevent infinite loading loops
-const [hasAttemptedHistoryLoad, setHasAttemptedHistoryLoad] = useState(false);
-
-// Always include finally blocks
-try {
-  setLoading(true);
-  // ... async operations
-} catch (error) {
-  setError(error.message);
-} finally {
-  setLoading(false); // Critical: always reset loading state
-}
-```
-
-#### Bundle Size Considerations
-- **Frontend Build**: Skip TypeScript compilation in production (`vite build` only)
-- **Code Splitting**: Lazy load non-critical components
-- **Asset Optimization**: Vite handles CSS/JS minification automatically
-
-### Development Workflow Requirements
-
-#### Local Testing Setup
-1. **Electron Dev**: `npm run electron:dev` with frontend dev server running
-2. **Agent Endpoints**: Configure test agents with accessible API endpoints
-3. **History Testing**: Ensure test agents have conversation history in `~/.claude/projects/`
-
-#### Production Testing Checklist
-- [ ] DMG installs without security warnings
-- [ ] App launches and displays frontend correctly
-- [ ] Agent configuration persists between app restarts
-- [ ] Remote agent history loads correctly
-- [ ] Conversation selection works and loads messages
-- [ ] Error states display helpful messages
-- [ ] Loading states resolve properly (no infinite loading)
+**Error Messages**: Use specific messages like "Could not find the project for this conversation" not generic "failed to load"
