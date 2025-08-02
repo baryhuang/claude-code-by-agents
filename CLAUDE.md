@@ -698,3 +698,176 @@ gh api repos/sugyan/claude-code-webui/pulls/39/comments
 - Always check for Copilot feedback when reviewing PRs
 
 **Important for Claude**: Always run commands from the project root directory. When using `cd` commands for backend/frontend, use full paths like `cd /path/to/project/backend` to avoid getting lost in subdirectories.
+
+## Technical Implementation Details & Testing Guide
+
+### Multi-Agent Architecture Specifics
+
+#### Agent Communication Pattern
+- **Orchestrator Agent**: Lives locally in Electron app, manages multi-agent workflows
+- **Remote Worker Agents**: Run Claude Code on remote machines, accessible via HTTP endpoints
+- **Key Design Principle**: Main chat room persistence uses application state (not Claude Code), individual agent sessions use Claude Code SDK for continuity
+
+#### Critical Path Dependencies
+1. **Agent Configuration Loading**: `useAgentConfig` hook must load before any agent operations
+2. **Session Management**: Each agent maintains independent session state via `getOrCreateAgentSession(agentId)`
+3. **Message Attribution**: All messages must include `agentId` for proper routing and display
+4. **Working Directory Context**: Each agent's `workingDirectory` determines Claude Code execution context
+
+### Remote Agent History Architecture
+
+#### Implementation Constraints
+- **Location**: History only appears in individual agent detail views, NOT main chat room
+- **Source**: Remote agents expose their `~/.claude/projects/` via API endpoints
+- **Filtering**: Agent-specific project filtering based on working directory keywords and description
+- **Caching**: 5-minute cache for remote history requests to reduce API load
+
+#### Critical API Flow
+```
+1. GET /api/agent-projects → Returns projects with history directories
+2. Filter projects by agent keywords (working dir + description + ID)
+3. GET /api/agent-histories/:encodedProjectName → Get conversation summaries
+4. GET /api/agent-conversations/:encodedProjectName/:sessionId → Load full conversation
+```
+
+#### Error Handling Requirements
+- **Network Failures**: Show specific error messages, not generic "failed to load"
+- **Empty History**: Clear "No conversations yet" state with call-to-action
+- **Loading States**: Must prevent infinite loops via `hasAttemptedHistoryLoad` flags
+- **Conversation Loading**: Add `finally` blocks to ensure loading states are cleared
+
+### Frontend State Management Patterns
+
+#### useAgentConfig Hook Architecture
+```typescript
+// Required return shape for compatibility
+return {
+  config,
+  agents: config.agents, // Critical for legacy components
+  updateConfig,
+  // ... other methods
+}
+```
+
+#### Message Flow Patterns
+- **User Input**: ChatInput → handleSendMessage → addMessage(useAgentRoom: false)
+- **Agent Responses**: Streaming → processStreamLine → updateLastMessage
+- **Historical Loading**: loadHistoricalMessages(messages, sessionId, agentId, useAgentRoom: false)
+
+#### State Isolation Requirements
+- **Session IDs**: Each agent maintains separate `sessionId` for Claude continuity
+- **Message Arrays**: `agentSessions[agentId].messages` stores agent-specific history
+- **Loading States**: Per-agent loading states to prevent cross-agent interference
+
+### Electron Packaging & Distribution
+
+#### Critical Path Resolution
+```javascript
+// Production frontend loading
+const indexPath = app.isPackaged 
+  ? path.join(__dirname, '../frontend/dist/index.html')  // In app.asar
+  : path.join(__dirname, '../frontend/dist/index.html'); // Development
+```
+
+#### Build Process Dependencies
+1. **Frontend Build**: Must run `vite build` before `electron-builder`
+2. **File Inclusion**: `electron-builder` copies `frontend/dist/**/*` to app.asar
+3. **Code Signing**: Uses certificate `FA8011BD47CC466BCF8A1497949312B03D6D1CE2`
+4. **DMG Creation**: Separate Intel (x64) and ARM64 builds for macOS
+
+#### Testing Requirements
+- **Development**: `npm run electron:dev` should load frontend from localhost:3000
+- **Production**: DMG should load frontend from app.asar bundle
+- **Fallback Paths**: Must try multiple paths if primary loading fails
+
+### User Experience Design Constraints
+
+#### History Panel UX Rules
+- **Tab Interface**: "Current Chat" vs "History" tabs in AgentDetailView
+- **Auto-Switch**: After loading historical conversation, switch back to "Current Chat" tab
+- **Visual Feedback**: Loading spinners, error states, empty states with clear messaging
+- **Conversation Previews**: Show session ID (truncated), timestamp, message count, last message preview
+
+#### Agent Filtering Logic
+```javascript
+// Keywords extraction for project filtering
+const agentKeywords = [
+  ...agentWorkingDir.split(/[/\\-_\s]+/).filter(Boolean),
+  ...agent.description.toLowerCase().split(/[\s,.-]+/).filter(Boolean),
+  agent.id.toLowerCase()
+];
+
+// Relevance check
+const isRelevant = agentKeywords.some(keyword => 
+  keyword.length > 2 && projectPath.includes(keyword)
+);
+```
+
+#### Error Message Guidelines
+- **Network Errors**: "Could not connect to agent at [endpoint]"
+- **Project Not Found**: "Could not find the project for this conversation"
+- **Empty Results**: "No conversations yet. Start chatting with this agent to see conversation history here."
+- **Loading Failures**: "Failed to load conversation: [specific error]"
+
+### Critical Testing Scenarios
+
+#### Mac App Loading
+1. **DMG Installation**: Install from DMG, launch app, verify frontend loads
+2. **Development Mode**: `NODE_ENV=development electron .` should use dev server
+3. **Production Mode**: Packaged app should load from app.asar without errors
+4. **Console Logging**: Check for "Loading frontend from:" debug messages
+
+#### Remote History Integration
+1. **Empty Agent**: No projects → "No conversations yet" state
+2. **Network Failure**: Offline agent → specific error message
+3. **Successful Load**: Multiple conversations → properly filtered and displayed
+4. **Conversation Selection**: Click conversation → loads in current chat, switches to "Current Chat" tab
+
+#### Cross-Agent Isolation
+1. **Session Separation**: Agent A conversation should not appear in Agent B history
+2. **Project Filtering**: Agent with working dir `/project/frontend` should only see frontend-related projects
+3. **State Independence**: Loading history for Agent A should not affect Agent B loading state
+
+### Performance Optimization Patterns
+
+#### Caching Strategies
+- **Remote History**: 5-minute cache prevents repeated API calls
+- **Agent Config**: LocalStorage + Electron persistent storage for configuration
+- **Message History**: In-memory per-agent session storage
+
+#### Loading State Management
+```javascript
+// Prevent infinite loading loops
+const [hasAttemptedHistoryLoad, setHasAttemptedHistoryLoad] = useState(false);
+
+// Always include finally blocks
+try {
+  setLoading(true);
+  // ... async operations
+} catch (error) {
+  setError(error.message);
+} finally {
+  setLoading(false); // Critical: always reset loading state
+}
+```
+
+#### Bundle Size Considerations
+- **Frontend Build**: Skip TypeScript compilation in production (`vite build` only)
+- **Code Splitting**: Lazy load non-critical components
+- **Asset Optimization**: Vite handles CSS/JS minification automatically
+
+### Development Workflow Requirements
+
+#### Local Testing Setup
+1. **Electron Dev**: `npm run electron:dev` with frontend dev server running
+2. **Agent Endpoints**: Configure test agents with accessible API endpoints
+3. **History Testing**: Ensure test agents have conversation history in `~/.claude/projects/`
+
+#### Production Testing Checklist
+- [ ] DMG installs without security warnings
+- [ ] App launches and displays frontend correctly
+- [ ] Agent configuration persists between app restarts
+- [ ] Remote agent history loads correctly
+- [ ] Conversation selection works and loads messages
+- [ ] Error states display helpful messages
+- [ ] Loading states resolve properly (no infinite loading)
