@@ -46,6 +46,17 @@ export interface HistoryListResponse {
   conversations: ConversationSummary[];
 }
 
+// Remote agent history types
+export interface RemoteAgentProjectsResponse {
+  projects: ProjectInfo[];
+  agentId: string;
+}
+
+export interface RemoteAgentHistoryResponse {
+  conversations: ConversationSummary[];
+  agentId: string;
+}
+
 // Conversation history types
 // Note: messages are typed as unknown[] to avoid frontend/backend dependency issues
 // Frontend should cast to TimestampedSDKMessage[] (defined in frontend/src/types.ts)

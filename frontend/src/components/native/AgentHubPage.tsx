@@ -11,19 +11,25 @@ import { ChatMessages } from "../chat/ChatMessages";
 import { ChatInput } from "./ChatInput";
 import { AgentDetailView } from "./AgentDetailView";
 import { PermissionDialog } from "../PermissionDialog";
+import { HistoryModal } from "../HistoryModal";
 import { getChatUrl } from "../../config/api";
 import { KEYBOARD_SHORTCUTS } from "../../utils/constants";
 import { useAgentConfig } from "../../hooks/useAgentConfig";
+import { useHistoryLoader } from "../../hooks/useHistoryLoader";
+import { useRemoteAgentHistory } from "../../hooks/useRemoteAgentHistory";
 import type { StreamingContext } from "../../hooks/streaming/useMessageProcessor";
 import { debugStreamingConnection, debugStreamingChunk, debugStreamingPerformance, warnProxyBuffering } from "../../utils/streamingDebug";
 
 export function AgentHubPage() {
   const [currentMode, setCurrentMode] = useState<"group" | "agent">("group");
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
   
   useTheme(); // For theme switching support
   const { processStreamLine } = useClaudeStreaming();
   const { abortRequest, createAbortHandler } = useAbortController();
-  const { getAgentById, getOrchestratorAgent, config } = useAgentConfig();
+  const { getAgentById, getOrchestratorAgent, config, agents } = useAgentConfig();
+  const historyLoader = useHistoryLoader();
+  const remoteHistory = useRemoteAgentHistory();
 
   const {
     messages,
@@ -52,6 +58,7 @@ export function AgentHubPage() {
     getTargetAgentId,
     getAgentRoomContext,
     getOrCreateAgentSession,
+    loadHistoricalMessages,
   } = useChatState();
 
   const {
@@ -92,6 +99,90 @@ export function AgentHubPage() {
   const handleNewAgentRoom = useCallback(() => {
     setCurrentMode("group");
   }, []);
+
+  const handleShowHistory = useCallback(() => {
+    setShowHistoryModal(true);
+  }, []);
+
+  const handleHistoryConversationSelect = useCallback(async (sessionId: string, agentId?: string) => {
+    try {
+      // Try to find the conversation in available projects
+      let foundProject = null;
+      
+      if (agentId && agentId !== "local") {
+        // For remote agents, get their projects and try to find the session
+        const agent = agents.find(a => a.id === agentId);
+        if (agent) {
+          try {
+            const agentProjects = await remoteHistory.fetchAgentProjects(agent.apiEndpoint);
+            // Try each project until we find one with this session
+            for (const project of agentProjects) {
+              try {
+                const conversation = await remoteHistory.fetchAgentConversation(
+                  agent.apiEndpoint,
+                  project.encodedName,
+                  sessionId
+                );
+                if (conversation) {
+                  foundProject = project.encodedName;
+                  break;
+                }
+              } catch {
+                // Continue searching in other projects
+              }
+            }
+          } catch (error) {
+            console.warn("Could not search agent projects for session:", error);
+          }
+        }
+      } else {
+        // For local conversations, try current working directory projects
+        // This is a simplified approach - in a full implementation we'd track
+        // project context with each conversation
+        foundProject = "-Users-buryhuang-git-claude-code-web-agent"; // Based on your local projects
+      }
+      
+      // Fallback to a default if we couldn't find the project
+      const projectToUse = foundProject || "default";
+      
+      // Load the historical conversation
+      await historyLoader.loadHistory(projectToUse, sessionId, agentId);
+      
+      // If we have historical messages, populate the current chat
+      if (historyLoader.messages.length > 0) {
+        console.log("📚 Loading historical conversation:", {
+          sessionId,
+          agentId,
+          messageCount: historyLoader.messages.length,
+        });
+
+        // Determine if this is a group/orchestrator conversation
+        const isGroupConversation = !agentId || agentId === "local";
+        
+        // Switch to the appropriate mode and agent
+        if (agentId && agentId !== "local") {
+          // Switch to specific agent
+          switchToAgent(agentId);
+          setCurrentMode("agent");
+          
+          // Load messages into the agent's session
+          loadHistoricalMessages(historyLoader.messages, sessionId, agentId, false);
+        } else {
+          // Load into orchestrator/group session
+          setCurrentMode("group");
+          
+          // Load messages into the orchestrator session
+          loadHistoricalMessages(historyLoader.messages, sessionId, undefined, true);
+        }
+        
+        console.log("✅ Historical conversation loaded successfully");
+      } else {
+        console.warn("⚠️ No messages found in historical conversation");
+      }
+    } catch (error) {
+      console.error("❌ Failed to load conversation:", error);
+    }
+  }, [historyLoader, switchToAgent, setCurrentMode, loadHistoricalMessages, agents, remoteHistory]);
 
   const handleSendMessage = useCallback(async () => {
     if (!input.trim() || isLoading) return;
@@ -601,6 +692,7 @@ export function AgentHubPage() {
           currentMode={currentMode}
           activeAgentId={currentMode === "agent" ? activeAgentId : null}
           onModeToggle={handleModeToggle}
+          onShowHistory={handleShowHistory}
         />
 
         {/* Main Content Area */}
@@ -669,6 +761,14 @@ export function AgentHubPage() {
           onClose={closePermissionDialog}
         />
       )}
+
+      {/* History Modal */}
+      <HistoryModal
+        isOpen={showHistoryModal}
+        onClose={() => setShowHistoryModal(false)}
+        onConversationSelect={handleHistoryConversationSelect}
+        activeAgentId={activeAgentId}
+      />
     </div>
   );
 }

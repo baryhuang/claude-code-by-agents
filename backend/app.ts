@@ -17,6 +17,9 @@ import { handleHistoriesRequest } from "./handlers/histories.ts";
 import { handleConversationRequest } from "./handlers/conversations.ts";
 import { handleChatRequest } from "./handlers/chat.ts";
 import { handleAbortRequest } from "./handlers/abort.ts";
+import { handleAgentProjectsRequest } from "./handlers/agentProjects.ts";
+import { handleAgentHistoriesRequest } from "./handlers/agentHistories.ts";
+import { handleAgentConversationRequest } from "./handlers/agentConversations.ts";
 
 export interface AppConfig {
   debugMode: boolean;
@@ -72,6 +75,17 @@ export function createApp(
 
   app.get("/api/projects/:encodedProjectName/histories/:sessionId", (c) =>
     handleConversationRequest(c),
+  );
+
+  // Agent history endpoints
+  app.get("/api/agent-projects", (c) => handleAgentProjectsRequest(c));
+  
+  app.get("/api/agent-histories/:encodedProjectName", (c) =>
+    handleAgentHistoriesRequest(c),
+  );
+  
+  app.get("/api/agent-conversations/:encodedProjectName/:sessionId", (c) =>
+    handleAgentConversationRequest(c),
   );
 
   app.post("/api/abort/:requestId", (c) =>

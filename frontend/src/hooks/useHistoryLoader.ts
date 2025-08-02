@@ -4,6 +4,7 @@ import type { ConversationHistory } from "../../../shared/types";
 import { getConversationUrl } from "../config/api";
 import { useMessageConverter } from "./useMessageConverter";
 import { useAgentConfig } from "./useAgentConfig";
+import { useRemoteAgentHistory } from "./useRemoteAgentHistory";
 
 interface HistoryLoaderState {
   messages: AllMessage[];
@@ -13,7 +14,7 @@ interface HistoryLoaderState {
 }
 
 interface HistoryLoaderResult extends HistoryLoaderState {
-  loadHistory: (projectPath: string, sessionId: string) => Promise<void>;
+  loadHistory: (projectPath: string, sessionId: string, agentId?: string) => Promise<void>;
   clearHistory: () => void;
 }
 
@@ -42,10 +43,11 @@ export function useHistoryLoader(): HistoryLoaderResult {
   });
 
   const { convertConversationHistory } = useMessageConverter();
-  const { getOrchestratorAgent } = useAgentConfig();
+  const { getOrchestratorAgent, agents } = useAgentConfig();
+  const remoteHistory = useRemoteAgentHistory();
 
   const loadHistory = useCallback(
-    async (encodedProjectName: string, sessionId: string) => {
+    async (encodedProjectName: string, sessionId: string, agentId?: string) => {
       if (!encodedProjectName || !sessionId) {
         setState((prev) => ({
           ...prev,
@@ -61,18 +63,35 @@ export function useHistoryLoader(): HistoryLoaderResult {
           error: null,
         }));
 
-        const orchestratorAgent = getOrchestratorAgent();
-        const response = await fetch(
-          getConversationUrl(encodedProjectName, sessionId, orchestratorAgent?.apiEndpoint),
-        );
+        let conversationHistory: ConversationHistory;
 
-        if (!response.ok) {
-          throw new Error(
-            `Failed to load conversation: ${response.status} ${response.statusText}`,
+        if (agentId && agentId !== "local") {
+          // Load from remote agent
+          const agent = agents.find(a => a.id === agentId);
+          if (!agent) {
+            throw new Error(`Agent with ID ${agentId} not found`);
+          }
+          
+          conversationHistory = await remoteHistory.fetchAgentConversation(
+            agent.apiEndpoint,
+            encodedProjectName,
+            sessionId
           );
-        }
+        } else {
+          // Load from local orchestrator
+          const orchestratorAgent = getOrchestratorAgent();
+          const response = await fetch(
+            getConversationUrl(encodedProjectName, sessionId, orchestratorAgent?.apiEndpoint),
+          );
 
-        const conversationHistory: ConversationHistory = await response.json();
+          if (!response.ok) {
+            throw new Error(
+              `Failed to load conversation: ${response.status} ${response.statusText}`,
+            );
+          }
+
+          conversationHistory = await response.json();
+        }
 
         // Validate the response structure
         if (
@@ -115,7 +134,7 @@ export function useHistoryLoader(): HistoryLoaderResult {
         }));
       }
     },
-    [convertConversationHistory],
+    [convertConversationHistory, agents, remoteHistory, getOrchestratorAgent],
   );
 
   const clearHistory = useCallback(() => {
@@ -140,18 +159,19 @@ export function useHistoryLoader(): HistoryLoaderResult {
 export function useAutoHistoryLoader(
   encodedProjectName?: string,
   sessionId?: string,
+  agentId?: string,
 ): HistoryLoaderResult {
   const historyLoader = useHistoryLoader();
 
   useEffect(() => {
     if (encodedProjectName && sessionId) {
-      historyLoader.loadHistory(encodedProjectName, sessionId);
+      historyLoader.loadHistory(encodedProjectName, sessionId, agentId);
     } else if (!sessionId) {
       // Only clear if there's no sessionId - don't clear while waiting for encodedProjectName
       historyLoader.clearHistory();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [encodedProjectName, sessionId]);
+  }, [encodedProjectName, sessionId, agentId]);
 
   return historyLoader;
 }

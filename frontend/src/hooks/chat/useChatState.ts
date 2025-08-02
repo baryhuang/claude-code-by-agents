@@ -180,6 +180,34 @@ export function useChatState() {
     };
   }, [orchestratorSession]);
 
+  // Load historical messages into chat state
+  const loadHistoricalMessages = useCallback((
+    messages: AllMessage[], 
+    sessionId: string, 
+    agentId?: string, 
+    useAgentRoom: boolean = false
+  ) => {
+    if (useAgentRoom) {
+      // Load into orchestrator session
+      setAgentRoomSession(prev => ({
+        ...prev,
+        messages: messages,
+        sessionId: sessionId,
+      }));
+    } else {
+      // Load into specific agent session or default
+      const targetAgentId = agentId || activeAgentId || 'default';
+      
+      setAgentSessions(prev => ({
+        ...prev,
+        [targetAgentId]: {
+          messages: messages,
+          sessionId: sessionId,
+        }
+      }));
+    }
+  }, [activeAgentId]);
+
   return {
     // State
     messages,
@@ -216,5 +244,6 @@ export function useChatState() {
     getTargetAgentId,
     getCurrentSession,
     getAgentRoomContext,
+    loadHistoricalMessages,
   };
 }

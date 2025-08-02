@@ -6,6 +6,10 @@ export const API_CONFIG = {
     PROJECTS: "/api/projects",
     HISTORIES: "/api/projects",
     CONVERSATIONS: "/api/projects",
+    // Remote agent history endpoints
+    AGENT_PROJECTS: "/api/agent-projects",
+    AGENT_HISTORIES: "/api/agent-histories",
+    AGENT_CONVERSATIONS: "/api/agent-conversations",
   },
 } as const;
 
@@ -49,4 +53,22 @@ export const getConversationUrl = (
   orchestratorEndpoint?: string,
 ) => {
   return getApiUrl(`${API_CONFIG.ENDPOINTS.CONVERSATIONS}/${encodedProjectName}/histories/${sessionId}`, orchestratorEndpoint);
+};
+
+// Remote agent history helper functions
+export const getAgentProjectsUrl = (agentEndpoint: string) => {
+  return `${agentEndpoint}${API_CONFIG.ENDPOINTS.AGENT_PROJECTS}`;
+};
+
+export const getAgentHistoriesUrl = (agentEndpoint: string, projectPath: string) => {
+  const encodedPath = encodeURIComponent(projectPath);
+  return `${agentEndpoint}${API_CONFIG.ENDPOINTS.AGENT_HISTORIES}/${encodedPath}`;
+};
+
+export const getAgentConversationUrl = (
+  agentEndpoint: string,
+  encodedProjectName: string,
+  sessionId: string,
+) => {
+  return `${agentEndpoint}${API_CONFIG.ENDPOINTS.AGENT_CONVERSATIONS}/${encodedProjectName}/${sessionId}`;
 };
