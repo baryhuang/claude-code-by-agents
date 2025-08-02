@@ -14,6 +14,7 @@ export async function handleAgentHistoriesRequest(c: Context) {
   try {
     const { debugMode, runtime } = c.var.config;
     const encodedProjectName = c.req.param("encodedProjectName");
+    const agentId = c.req.query("agentId"); // Get agent ID from query parameter
 
     if (!encodedProjectName) {
       return c.json({ error: "Encoded project name is required" }, 400);
@@ -65,16 +66,45 @@ export async function handleAgentHistoriesRequest(c: Context) {
     }
 
     // Group conversations and remove duplicates
-    const conversations = groupConversations(conversationFiles);
+    const groupedConversations = groupConversations(conversationFiles);
+
+    // Filter conversations by agent ID if provided
+    let filteredConversations = groupedConversations;
+    if (agentId) {
+      filteredConversations = groupedConversations.filter(conversation => {
+        // Find the corresponding conversation file to check agent ID
+        const conversationFile = conversationFiles.find(file => 
+          file.sessionId === conversation.sessionId
+        );
+        return conversationFile?.agentId === agentId;
+      });
+
+      if (debugMode) {
+        console.debug(
+          `[DEBUG] Filtered to ${filteredConversations.length} conversations for agent: ${agentId}`,
+        );
+      }
+    }
+
+    // Add agent ID to the conversation summaries
+    const conversationsWithAgentId = filteredConversations.map(conversation => {
+      const conversationFile = conversationFiles.find(file => 
+        file.sessionId === conversation.sessionId
+      );
+      return {
+        ...conversation,
+        agentId: conversationFile?.agentId
+      };
+    });
 
     if (debugMode) {
       console.debug(
-        `[DEBUG] After grouping: ${conversations.length} unique agent conversations`,
+        `[DEBUG] After grouping and filtering: ${conversationsWithAgentId.length} unique agent conversations`,
       );
     }
 
     const response: HistoryListResponse = {
-      conversations,
+      conversations: conversationsWithAgentId,
     };
 
     return c.json(response);

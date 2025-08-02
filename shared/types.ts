@@ -40,6 +40,7 @@ export interface ConversationSummary {
   lastTime: string;
   messageCount: number;
   lastMessagePreview: string;
+  agentId?: string; // Agent that created this conversation
 }
 
 export interface HistoryListResponse {
@@ -67,6 +68,7 @@ export interface ConversationHistory {
     startTime: string;
     endTime: string;
     messageCount: number;
+    agentId?: string; // Agent that created this conversation
   };
 }
 

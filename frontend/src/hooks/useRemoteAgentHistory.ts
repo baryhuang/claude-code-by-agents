@@ -5,7 +5,7 @@ import { getAgentProjectsUrl, getAgentHistoriesUrl, getAgentConversationUrl } fr
 interface RemoteAgentHistoryCache {
   [agentEndpoint: string]: {
     projects?: ProjectInfo[];
-    histories?: { [projectId: string]: ConversationSummary[] };
+    histories?: { [key: string]: ConversationSummary[] }; // key: `${projectId}:${agentId || 'all'}`
     conversations?: { [key: string]: ConversationHistory }; // key: `${projectId}:${sessionId}`
     lastFetch?: number;
   };
@@ -63,17 +63,19 @@ export function useRemoteAgentHistory() {
 
   const fetchAgentHistories = useCallback(async (
     agentEndpoint: string, 
-    projectId: string
+    projectId: string,
+    agentId?: string
   ): Promise<ConversationSummary[]> => {
-    if (isCacheValid(agentEndpoint, 'histories') && cache[agentEndpoint].histories?.[projectId]) {
-      return cache[agentEndpoint].histories![projectId];
+    const cacheKey = `${projectId}:${agentId || 'all'}`;
+    if (isCacheValid(agentEndpoint, 'histories') && cache[agentEndpoint].histories?.[cacheKey]) {
+      return cache[agentEndpoint].histories![cacheKey];
     }
 
     try {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(getAgentHistoriesUrl(agentEndpoint, projectId));
+      const response = await fetch(getAgentHistoriesUrl(agentEndpoint, projectId, agentId));
       if (!response.ok) {
         throw new Error(`Failed to fetch agent histories: ${response.statusText}`);
       }
@@ -86,7 +88,7 @@ export function useRemoteAgentHistory() {
           ...prev[agentEndpoint],
           histories: {
             ...prev[agentEndpoint]?.histories,
-            [projectId]: data.conversations,
+            [cacheKey]: data.conversations,
           },
           lastFetch: Date.now(),
         }
@@ -161,8 +163,9 @@ export function useRemoteAgentHistory() {
     return cache[agentEndpoint]?.projects;
   }, [cache]);
 
-  const getCachedHistories = useCallback((agentEndpoint: string, projectId: string): ConversationSummary[] | undefined => {
-    return cache[agentEndpoint]?.histories?.[projectId];
+  const getCachedHistories = useCallback((agentEndpoint: string, projectId: string, agentId?: string): ConversationSummary[] | undefined => {
+    const cacheKey = `${projectId}:${agentId || 'all'}`;
+    return cache[agentEndpoint]?.histories?.[cacheKey];
   }, [cache]);
 
   const getCachedConversation = useCallback((

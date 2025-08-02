@@ -60,9 +60,13 @@ export const getAgentProjectsUrl = (agentEndpoint: string) => {
   return `${agentEndpoint}${API_CONFIG.ENDPOINTS.AGENT_PROJECTS}`;
 };
 
-export const getAgentHistoriesUrl = (agentEndpoint: string, projectPath: string) => {
+export const getAgentHistoriesUrl = (agentEndpoint: string, projectPath: string, agentId?: string) => {
   const encodedPath = encodeURIComponent(projectPath);
-  return `${agentEndpoint}${API_CONFIG.ENDPOINTS.AGENT_HISTORIES}/${encodedPath}`;
+  const baseUrl = `${agentEndpoint}${API_CONFIG.ENDPOINTS.AGENT_HISTORIES}/${encodedPath}`;
+  if (agentId) {
+    return `${baseUrl}?agentId=${encodeURIComponent(agentId)}`;
+  }
+  return baseUrl;
 };
 
 export const getAgentConversationUrl = (

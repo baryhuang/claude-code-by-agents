@@ -64,6 +64,7 @@ function createConversationSummary(
     lastTime: conversationFile.lastTime,
     messageCount: conversationFile.messageCount,
     lastMessagePreview: conversationFile.lastMessagePreview,
+    agentId: conversationFile.agentId,
   };
 }
 
