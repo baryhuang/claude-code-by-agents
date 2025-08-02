@@ -75,7 +75,7 @@ async function* executeAgentHttpRequest(
     const decoder = new TextDecoder();
 
     try {
-      let timeoutId: NodeJS.Timeout | null = null;
+      let timeoutId: number | NodeJS.Timeout | null = null;
       
       while (true) {
         // Add timeout for each read operation
