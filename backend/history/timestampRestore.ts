@@ -66,6 +66,7 @@ export function calculateConversationMetadata(messages: RawHistoryLine[]): {
   startTime: string;
   endTime: string;
   messageCount: number;
+  agentId?: string;
 } {
   if (messages.length === 0) {
     const now = new Date().toISOString();
@@ -81,10 +82,14 @@ export function calculateConversationMetadata(messages: RawHistoryLine[]): {
   const startTime = sortedMessages[0].timestamp;
   const endTime = sortedMessages[sortedMessages.length - 1].timestamp;
 
+  // Extract agent ID from the first message that has one
+  const agentId = messages.find(msg => msg.agentId)?.agentId;
+
   return {
     startTime,
     endTime,
     messageCount: messages.length,
+    agentId,
   };
 }
 
@@ -101,6 +106,7 @@ export function processConversationMessages(
     startTime: string;
     endTime: string;
     messageCount: number;
+    agentId?: string;
   };
 } {
   // Restore timestamps

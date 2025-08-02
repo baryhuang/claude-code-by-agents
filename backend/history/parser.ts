@@ -22,6 +22,7 @@ export interface RawHistoryLine {
   cwd?: string;
   version?: string;
   requestId?: string;
+  agentId?: string; // Agent that created this conversation line
 }
 
 // Legacy interface maintained for transition period
@@ -35,6 +36,7 @@ export interface ConversationFile {
   lastTime: string;
   messageCount: number;
   lastMessagePreview: string;
+  agentId?: string; // Agent that created this conversation
 }
 
 /**
@@ -61,11 +63,17 @@ async function parseHistoryFile(
     let startTime = "";
     let lastTime = "";
     let lastMessagePreview = "";
+    let agentId: string | undefined;
 
     for (const line of lines) {
       try {
         const parsed = JSON.parse(line) as RawHistoryLine;
         messages.push(parsed);
+
+        // Extract agent ID from the first message that has one
+        if (!agentId && parsed.agentId) {
+          agentId = parsed.agentId;
+        }
 
         // Track message IDs from assistant messages
         if (parsed.message?.role === "assistant" && "id" in parsed.message && parsed.message.id) {
@@ -114,6 +122,7 @@ async function parseHistoryFile(
       lastTime,
       messageCount: messages.length,
       lastMessagePreview: lastMessagePreview || "No preview available",
+      agentId,
     };
   } catch (error) {
     console.error(`Failed to read history file ${filePath}:`, error);
