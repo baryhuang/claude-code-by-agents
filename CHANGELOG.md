@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.37](https://github.com/baryhuang/claude-code-by-agents/compare/v0.0.4...0.1.37) - 2025-08-02
 - Add Claude Code GitHub Workflow by @baryhuang in https://github.com/baryhuang/claude-code-by-agents/pull/14
+- Release for 0.1.37 by @github-actions[bot] in https://github.com/baryhuang/claude-code-by-agents/pull/15
+
+## [0.1.37](https://github.com/baryhuang/claude-code-by-agents/compare/v0.0.4...0.1.37) - 2025-08-02
+- Add Claude Code GitHub Workflow by @baryhuang in https://github.com/baryhuang/claude-code-by-agents/pull/14
 
 ## [0.1.37](https://github.com/sugyan/claude-code-webui/compare/0.1.36...0.1.37) - 2025-07-14
 - docs: improve npm installation documentation and badge layout by @sugyan in https://github.com/sugyan/claude-code-webui/pull/184
