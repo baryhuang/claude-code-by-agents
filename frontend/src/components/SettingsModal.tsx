@@ -1,8 +1,10 @@
-import { X, RotateCcw, Plus, Edit3, Trash2 } from "lucide-react";
+import { X, RotateCcw, Plus, Edit3, Trash2, Library } from "lucide-react";
 import { useState, useEffect } from "react";
 import { ThemeToggle } from "./chat/ThemeToggle";
 import { useTheme } from "../hooks/useTheme";
 import { useAgentConfig, type Agent } from "../hooks/useAgentConfig";
+import { PredefinedAgentsModal } from "./PredefinedAgentsModal";
+import { convertPredefinedToAgent, type PredefinedAgent } from "../config/predefinedAgents";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -16,12 +18,14 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   // Local state for modal management
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
   const [showAddAgent, setShowAddAgent] = useState(false);
+  const [showPredefinedAgents, setShowPredefinedAgents] = useState(false);
 
   // Reset modal state when opened
   useEffect(() => {
     if (isOpen) {
       setEditingAgent(null);
       setShowAddAgent(false);
+      setShowPredefinedAgents(false);
     }
   }, [isOpen]);
 
@@ -49,6 +53,12 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     if (confirm('Are you sure you want to delete this agent?')) {
       removeAgent(agentId);
     }
+  };
+
+  const handleAddPredefinedAgent = (predefinedAgent: PredefinedAgent, customEndpoint?: string) => {
+    const agent = convertPredefinedToAgent(predefinedAgent, customEndpoint);
+    addAgent(agent);
+    setShowPredefinedAgents(false);
   };
 
   if (!isOpen) return null;
@@ -185,26 +195,56 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             >
               Agents
             </h3>
-            <button
-              onClick={() => setShowAddAgent(true)}
-              style={{
-                padding: "6px 12px",
-                borderRadius: "6px",
-                border: "1px solid var(--claude-border)",
-                background: "var(--claude-text-accent)",
-                color: "white",
-                fontSize: "12px",
-                fontWeight: 500,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "4px",
-                transition: "all 0.15s ease"
-              }}
-            >
-              <Plus size={14} />
-              Add Agent
-            </button>
+            <div style={{ display: "flex", gap: "8px" }}>
+              <button
+                onClick={() => setShowPredefinedAgents(true)}
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: "6px",
+                  border: "1px solid var(--claude-border)",
+                  background: "var(--claude-message-bg)",
+                  color: "var(--claude-text-accent)",
+                  fontSize: "12px",
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  transition: "all 0.15s ease"
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "var(--claude-text-accent)";
+                  e.currentTarget.style.color = "white";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "var(--claude-message-bg)";
+                  e.currentTarget.style.color = "var(--claude-text-accent)";
+                }}
+              >
+                <Library size={14} />
+                Add from Library
+              </button>
+              <button
+                onClick={() => setShowAddAgent(true)}
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: "6px",
+                  border: "1px solid var(--claude-border)",
+                  background: "var(--claude-text-accent)",
+                  color: "white",
+                  fontSize: "12px",
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  transition: "all 0.15s ease"
+                }}
+              >
+                <Plus size={14} />
+                Add Custom
+              </button>
+            </div>
           </div>
 
           {/* Reset Button */}
@@ -370,6 +410,13 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           }}
         />
       )}
+
+      {/* Predefined Agents Modal */}
+      <PredefinedAgentsModal
+        isOpen={showPredefinedAgents}
+        onClose={() => setShowPredefinedAgents(false)}
+        onSelectAgent={handleAddPredefinedAgent}
+      />
     </div>
   );
 }
