@@ -9,6 +9,7 @@ import { usePermissions } from "../../hooks/chat/usePermissions";
 import { useAbortController } from "../../hooks/chat/useAbortController";
 import { useRemoteAgentHistory } from "../../hooks/useRemoteAgentHistory";
 import { useHistoryLoader } from "../../hooks/useHistoryLoader";
+import { useMessageConverter } from "../../hooks/useMessageConverter";
 import { ChatInput } from "./ChatInput";
 import { ChatMessages } from "../chat/ChatMessages";
 import { PermissionDialog } from "../PermissionDialog";
@@ -104,6 +105,7 @@ export function AgentDetailView({
   const { abortRequest, createAbortHandler } = useAbortController();
   const remoteHistory = useRemoteAgentHistory();
   const historyLoader = useHistoryLoader();
+  const { convertConversationHistory } = useMessageConverter();
 
   // Switch to this agent when component mounts
   useEffect(() => {
@@ -191,6 +193,10 @@ export function AgentDetailView({
     try {
       if (!agent) return;
 
+      // Show loading state while conversation is being loaded
+      setHistoryLoading(true);
+      setHistoryError(null);
+
       // Try to find the conversation in relevant projects only
       let foundProject = null;
       
@@ -239,27 +245,47 @@ export function AgentDetailView({
       // Fallback to a default if we couldn't find the project
       const projectToUse = foundProject || "default";
       
-      // Load the historical conversation
-      await historyLoader.loadHistory(projectToUse, sessionId, agentId);
+      // Get the conversation directly from remote agent
+      console.log(`🔍 Loading conversation ${sessionId} from project ${foundProject || "unknown"}`);
       
-      // If we have historical messages, populate the current chat
-      if (historyLoader.messages.length > 0) {
+      let conversation: any = null;
+      if (foundProject) {
+        conversation = await remoteHistory.fetchAgentConversation(
+          agent.apiEndpoint,
+          foundProject,
+          sessionId
+        );
+      }
+      
+      if (conversation && conversation.messages && conversation.messages.length > 0) {
         console.log("📚 Loading historical conversation:", {
           sessionId,
           agentId,
-          messageCount: historyLoader.messages.length,
+          messageCount: conversation.messages.length,
         });
 
+        // Convert the conversation to frontend message format
+        const convertedMessages = convertConversationHistory(conversation.messages);
+
         // Load messages into the agent's session
-        loadHistoricalMessages(historyLoader.messages, sessionId, agentId, false);
+        loadHistoricalMessages(convertedMessages, sessionId, agentId, false);
+        
+        // Switch back to Current Chat tab to show the loaded conversation
+        setShowHistory(false);
+        
+        // Clear any history errors
+        setHistoryError(null);
         
         console.log("✅ Historical conversation loaded successfully");
       } else {
         console.warn("⚠️ No messages found in historical conversation");
+        setHistoryError("No messages found in this conversation");
       }
     } catch (error) {
       console.error("❌ Failed to load conversation:", error);
       setHistoryError(error instanceof Error ? error.message : "Failed to load conversation");
+    } finally {
+      setHistoryLoading(false);
     }
   }, [agent, remoteHistory, historyLoader, agentId, loadHistoricalMessages]);
 
