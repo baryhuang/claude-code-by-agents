@@ -34,11 +34,26 @@ export async function getEncodedProjectName(
     // Claude converts '/', '\', ':', and '.' to '-'
     const expectedEncoded = normalizedPath.replace(/[/\\:.]/g, "-");
 
-    // Find exact match - if not found, return null
+    console.log(`🔍 Looking for project: ${projectPath}`);
+    console.log(`🔍 Expected encoded: ${expectedEncoded}`);
+    console.log(`🔍 Available directories: ${entries.join(", ")}`);
+
+    // First try exact match
     if (entries.includes(expectedEncoded)) {
+      console.log(`🔍 Found exact match: ${expectedEncoded}`);
       return expectedEncoded;
     }
 
+    // If no exact match, look for directories that start with the encoded path
+    // This handles cases where history exists for subdirectories within the project
+    const matchingDirs = entries.filter(entry => entry.startsWith(expectedEncoded + "-"));
+    if (matchingDirs.length > 0) {
+      console.log(`🔍 Found matching subdirectories: ${matchingDirs.join(", ")}`);
+      // Return the first matching directory as representative
+      return matchingDirs[0];
+    }
+
+    console.log(`🔍 No match found for ${expectedEncoded}`);
     return null;
   } catch {
     return null;
