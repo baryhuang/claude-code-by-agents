@@ -127,10 +127,38 @@ export function AgentDetailView({
       const agentProjects = await remoteHistory.fetchAgentProjects(agent.apiEndpoint);
       console.log(`📁 Found ${agentProjects.length} projects for agent ${agent.name}`);
       
-      // Collect all conversations from all projects for this agent
+      // Filter projects to only those relevant to this agent
+      const relevantProjects = agentProjects.filter(project => {
+        // Filter by agent's working directory or related keywords
+        const agentWorkingDir = agent.workingDirectory.toLowerCase();
+        const projectPath = project.path.toLowerCase();
+        
+        // Extract keywords from agent working directory and description
+        const agentKeywords = [
+          ...agentWorkingDir.split(/[/\\-_\s]+/).filter(Boolean),
+          ...agent.description.toLowerCase().split(/[\s,.-]+/).filter(Boolean),
+          agent.id.toLowerCase()
+        ];
+        
+        // Check if project path contains any agent-specific keywords
+        const isRelevant = agentKeywords.some(keyword => 
+          keyword.length > 2 && projectPath.includes(keyword)
+        );
+        
+        console.log(`📂 Project: ${project.path}`);
+        console.log(`🔍 Agent keywords: ${agentKeywords.join(", ")}`);
+        console.log(`✅ Is relevant: ${isRelevant}`);
+        
+        return isRelevant;
+      });
+      
+      console.log(`🎯 Filtered to ${relevantProjects.length} relevant projects for agent ${agent.name}`);
+      console.log(`📋 Relevant projects: ${relevantProjects.map(p => p.path).join(", ")}`);
+      
+      // Collect all conversations from relevant projects only
       const allAgentConversations: ConversationSummary[] = [];
       
-      for (const project of agentProjects) {
+      for (const project of relevantProjects) {
         try {
           console.log(`📖 Loading conversations from project: ${project.path}`);
           const projectHistories = await remoteHistory.fetchAgentHistories(
@@ -163,13 +191,32 @@ export function AgentDetailView({
     try {
       if (!agent) return;
 
-      // Try to find the conversation in available projects
+      // Try to find the conversation in relevant projects only
       let foundProject = null;
       
       try {
         const agentProjects = await remoteHistory.fetchAgentProjects(agent.apiEndpoint);
-        // Try each project until we find one with this session
-        for (const project of agentProjects) {
+        
+        // Filter to only relevant projects (same logic as loadAgentHistory)
+        const relevantProjects = agentProjects.filter(project => {
+          const agentWorkingDir = agent.workingDirectory.toLowerCase();
+          const projectPath = project.path.toLowerCase();
+          
+          const agentKeywords = [
+            ...agentWorkingDir.split(/[/\\-_\s]+/).filter(Boolean),
+            ...agent.description.toLowerCase().split(/[\s,.-]+/).filter(Boolean),
+            agent.id.toLowerCase()
+          ];
+          
+          return agentKeywords.some(keyword => 
+            keyword.length > 2 && projectPath.includes(keyword)
+          );
+        });
+        
+        console.log(`🔍 Searching for session ${sessionId} in ${relevantProjects.length} relevant projects`);
+        
+        // Try each relevant project until we find one with this session
+        for (const project of relevantProjects) {
           try {
             const conversation = await remoteHistory.fetchAgentConversation(
               agent.apiEndpoint,
@@ -178,6 +225,7 @@ export function AgentDetailView({
             );
             if (conversation) {
               foundProject = project.encodedName;
+              console.log(`✅ Found session in project: ${project.path}`);
               break;
             }
           } catch {
