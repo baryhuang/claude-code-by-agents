@@ -47,8 +47,47 @@ function createWindow() {
     // Open DevTools in development
     mainWindow.webContents.openDevTools();
   } else {
-    // In production, load the built frontend files directly
-    mainWindow.loadFile(path.join(__dirname, '../frontend/dist/index.html'));
+    // In production, load the built frontend files from the packaged app
+    let indexPath;
+    if (app.isPackaged) {
+      // In packaged app, files are in the app.asar bundle
+      indexPath = path.join(__dirname, '../frontend/dist/index.html');
+    } else {
+      // During development
+      indexPath = path.join(__dirname, '../frontend/dist/index.html');
+    }
+    
+    console.log('Loading frontend from:', indexPath);
+    console.log('App is packaged:', app.isPackaged);
+    console.log('__dirname:', __dirname);
+    console.log('process.resourcesPath:', process.resourcesPath);
+    
+    mainWindow.loadFile(indexPath).catch(err => {
+      console.error('Failed to load frontend:', err);
+      
+      // Fallback: try different paths
+      const fallbackPaths = [
+        path.join(process.resourcesPath, 'app.asar', 'frontend/dist/index.html'),
+        path.join(process.resourcesPath, 'frontend/dist/index.html'),
+        path.join(__dirname, 'frontend/dist/index.html')
+      ];
+      
+      let loaded = false;
+      for (const fallbackPath of fallbackPaths) {
+        console.log('Trying fallback path:', fallbackPath);
+        try {
+          mainWindow.loadFile(fallbackPath);
+          loaded = true;
+          break;
+        } catch (fallbackErr) {
+          console.error('Fallback failed:', fallbackPath, fallbackErr);
+        }
+      }
+      
+      if (!loaded) {
+        console.error('All paths failed, unable to load frontend');
+      }
+    });
   }
 
   // Show window when ready to prevent visual flash

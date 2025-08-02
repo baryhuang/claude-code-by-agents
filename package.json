@@ -12,7 +12,7 @@
     "build:backend": "cd backend && npm run build",
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
-    "dist:mac": "electron-builder --mac",
+    "dist:mac": "npm run build && electron-builder --mac",
     "dist:win": "electron-builder --win",
     "dist:linux": "electron-builder --linux",
     "postinstall": "cd frontend && npm install && cd ../backend && npm install"
