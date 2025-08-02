@@ -9,6 +9,7 @@ import { getEncodedProjectName } from "../history/pathUtils.ts";
  * @returns JSON response with projects array
  */
 export async function handleAgentProjectsRequest(c: Context) {
+  console.log("🔍 handleAgentProjectsRequest called");
   try {
     const { runtime } = c.var.config;
 
@@ -40,8 +41,11 @@ export async function handleAgentProjectsRequest(c: Context) {
         }
 
         const response: ProjectsResponse = { projects };
+        console.log("🔍 Returning projects:", projects.length, "projects");
+        console.log("🔍 Projects:", projects);
         return c.json(response);
       } else {
+        console.log("🔍 No projects found in config");
         const response: ProjectsResponse = { projects: [] };
         return c.json(response);
       }
