@@ -5,6 +5,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.37](https://github.com/baryhuang/claude-code-by-agents/compare/v0.0.4...0.1.37) - 2025-08-02
+- Add Claude Code GitHub Workflow by @baryhuang in https://github.com/baryhuang/claude-code-by-agents/pull/14
+
 ## [0.1.37](https://github.com/sugyan/claude-code-webui/compare/0.1.36...0.1.37) - 2025-07-14
 - docs: improve npm installation documentation and badge layout by @sugyan in https://github.com/sugyan/claude-code-webui/pull/184
 - feat: add Windows support for Claude Code WebUI by @sugyan in https://github.com/sugyan/claude-code-webui/pull/186
