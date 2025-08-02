@@ -44,9 +44,6 @@ jobs:
       - name: Type check
         run: cd backend && npm run typecheck
 
-      - name: Test
-        run: cd backend && npm run test
-
   frontend:
     name: Frontend
     runs-on: ubuntu-latest

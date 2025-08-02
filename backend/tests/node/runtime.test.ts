@@ -57,7 +57,7 @@ describe("Node.js Runtime", () => {
 
     // Verify it's actually JSON
     const parsed = JSON.parse(content);
-    expect(parsed.name).toBe("claude-code-webui");
+    expect(parsed.name).toBe("agentrooms");
   });
 
   it("should execute commands", async () => {
