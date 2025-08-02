@@ -1,7 +1,7 @@
 {
   "name": "agentrooms",
   "productName": "Agentrooms",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Multi-Agent Programming Collaboration Tool",
   "main": "electron/main.js",
   "scripts": {
