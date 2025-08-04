@@ -82,32 +82,49 @@ export class ClaudeCodeProvider implements AgentProvider {
         
         // Convert SDK message to provider response
         if (sdkMessage.type === "assistant") {
-          const content = Array.isArray(sdkMessage.content) 
-            ? sdkMessage.content.map(c => 
+          // Extract content based on actual SDK message structure
+          const messageData = sdkMessage as any;
+          let content = "";
+          
+          if (messageData.message?.content) {
+            if (Array.isArray(messageData.message.content)) {
+              content = messageData.message.content.map((c: any) => 
                 typeof c === "string" ? c : 
                 c.type === "text" ? c.text : 
                 JSON.stringify(c)
-              ).join("")
-            : typeof sdkMessage.content === "string"
-            ? sdkMessage.content
-            : JSON.stringify(sdkMessage.content);
+              ).join("");
+            } else if (typeof messageData.message.content === "string") {
+              content = messageData.message.content;
+            } else {
+              content = JSON.stringify(messageData.message.content);
+            }
+          } else {
+            content = JSON.stringify(messageData);
+          }
             
           yield {
             type: "text",
             content,
             metadata: {
-              model: (sdkMessage as any).model,
+              model: messageData.model,
             },
           };
         }
         
-        // Handle tool use
-        if (sdkMessage.type === "tool_use") {
-          yield {
-            type: "tool_use",
-            toolName: (sdkMessage as any).name,
-            toolInput: (sdkMessage as any).input,
-          };
+        // Handle tool use - check if the message contains tool use information
+        if ((sdkMessage as any).message?.content) {
+          const messageContent = (sdkMessage as any).message.content;
+          if (Array.isArray(messageContent)) {
+            for (const contentItem of messageContent) {
+              if (contentItem.type === "tool_use") {
+                yield {
+                  type: "tool_use",
+                  toolName: contentItem.name,
+                  toolInput: contentItem.input,
+                };
+              }
+            }
+          }
         }
         
         // Handle system messages (including screenshot captures)
@@ -119,7 +136,7 @@ export class ClaudeCodeProvider implements AgentProvider {
               type: "image",
               content: "Screenshot captured successfully",
               metadata: {
-                captureType: "screenshot",
+                model: (sdkMessage as any).model,
               },
             };
           }
