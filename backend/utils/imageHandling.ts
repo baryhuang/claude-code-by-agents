@@ -102,7 +102,7 @@ export class ImageHandler {
       quality?: number;
     } = {}
   ): Promise<ScreenshotCapture> {
-    const { format = "png", quality = 90 } = options;
+    const { format = "png", quality: _quality = 90 } = options;
     const timestamp = new Date().toISOString();
     const filename = `screenshot_${Date.now()}.${format}`;
     const filepath = join(this.tempDir, filename);

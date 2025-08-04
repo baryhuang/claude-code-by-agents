@@ -59,7 +59,7 @@ async function verifyImplementation() {
   try {
     await globalImageHandler.initialize();
     test("Image handler initializes", true);
-  } catch (error) {
+  } catch (_error) {
     test("Image handler initializes", false);
   }
   
@@ -68,7 +68,7 @@ async function verifyImplementation() {
     test("Screenshot capture works", capture.success === true);
     test("Screenshot produces image data", !!capture.imageData);
     test("Screenshot has metadata", !!capture.metadata);
-  } catch (error) {
+  } catch (_error) {
     test("Screenshot capture works", false);
     test("Screenshot produces image data", false);
     test("Screenshot has metadata", false);
@@ -83,7 +83,7 @@ async function verifyImplementation() {
     const imageData = await globalImageHandler.readImageAsBase64(filepath);
     test("Base64 image reading works", imageData.type === "base64");
     test("MIME type detection works", imageData.mimeType === "image/png");
-  } catch (error) {
+  } catch (_error) {
     test("Base64 image saving works", false);
     test("Base64 image reading works", false);
     test("MIME type detection works", false);
