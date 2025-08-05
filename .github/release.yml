@@ -74,6 +74,41 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium
+        working-directory: frontend
+
+      - name: Start development server
+        run: |
+          cd frontend
+          npm run dev &
+          # Wait for server to be ready
+          timeout 60 bash -c 'until curl -s http://localhost:3000 > /dev/null; do sleep 1; done'
+        continue-on-error: false
+
+      - name: Record demo videos
+        run: |
+          cd frontend
+          npm run record-demo codeGeneration -- --theme=both
+        continue-on-error: true
+
+      - name: Stop development server
+        run: |
+          # Kill any remaining dev server processes
+          pkill -f "vite" || true
+        continue-on-error: true
+
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
@@ -84,6 +119,7 @@ jobs:
         with:
           files: |
             artifacts/*/*
+            frontend/demo-recordings/*.webm
           generate_release_notes: true
           draft: false
           prerelease: false
