@@ -48,16 +48,26 @@ jobs:
       - name: Build frontend
         run: npm run build:frontend
 
+      - name: Rebuild native dependencies
+        run: npm rebuild
+
       - name: Install Python setuptools (Ubuntu only)
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo apt-get install -y python3-setuptools
+      
+      - name: Setup Python (macOS)
+        if: matrix.os == 'macos-latest'
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
 
       - name: Build Electron app
         run: npm run dist:${{ matrix.platform }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
