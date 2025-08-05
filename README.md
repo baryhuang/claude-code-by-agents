@@ -37,9 +37,11 @@ https://github.com/user-attachments/assets/0b4e6709-d9b9-4676-85e0-aec8e15fd097
 
 **Download Pre-built App:**
 - Download from [Releases](https://github.com/baryhuang/claude-code-by-agents/releases)
-- **Intel Mac**: `Agentrooms-0.0.1.dmg`
-- **Apple Silicon**: `Agentrooms-0.0.1-arm64.dmg`
-- Install by dragging to Applications folder
+- **Windows**: `claude-code-webui-windows-x64.exe` - Run the installer
+- **macOS Intel**: `claude-code-webui-macos-x64` - Drag to Applications folder  
+- **macOS Apple Silicon**: `claude-code-webui-macos-arm64` - Drag to Applications folder
+- **Linux x64**: `claude-code-webui-linux-x64` - Make executable and run
+- **Linux ARM64**: `claude-code-webui-linux-arm64` - Make executable and run
 - **Important**: Start the backend service separately (see Backend Setup below)
 
 **Build from Source:**
@@ -49,7 +51,9 @@ git clone https://github.com/baryhuang/claude-code-by-agents.git
 cd claude-code-by-agents
 npm install
 npm run build:frontend
-npm run dist:mac  # Creates DMG in dist/ folder
+npm run dist:mac     # Creates macOS DMG in dist/ folder
+npm run dist:win     # Creates Windows installer in dist/ folder  
+npm run dist:linux   # Creates Linux AppImage in dist/ folder
 ```
 
 ### Option 2: Web Development
@@ -61,9 +65,9 @@ cd backend && deno task dev        # Backend: http://localhost:8080
 cd frontend && npm run dev         # Frontend: http://localhost:3000
 ```
 
-### Backend Setup (Required for DMG App)
+### Backend Setup (Required for Desktop Apps)
 
-The DMG app runs frontend-only. Start the backend service separately:
+The desktop apps run frontend-only. Start the backend service separately:
 
 ```bash
 # Clone the repository
@@ -76,7 +80,7 @@ cd backend && deno task dev
 ```
 
 **Configure Frontend to Connect:**
-- Open the Agentrooms app
+- Open the Agentrooms app (Windows: run .exe installer, macOS: drag to Applications, Linux: make executable and run)
 - Frontend will automatically connect to `localhost:8080`
 - If backend is on different port, update frontend config
 
@@ -150,9 +154,11 @@ Agent N ← Step N ← Read Previous Results
 # Run in development mode
 npm run electron:dev    # Opens app with dev server
 
-# Build production DMG
+# Build production apps
 npm run build:frontend  # Build frontend first
-npm run dist:mac       # Creates DMG files in dist/
+npm run dist:mac       # Creates macOS DMG files in dist/
+npm run dist:win       # Creates Windows installer in dist/
+npm run dist:linux     # Creates Linux AppImage in dist/
 ```
 
 ### Web Development
@@ -176,7 +182,7 @@ make lint       # Lint TypeScript code
 ```bash
 make build-backend   # Build Deno binary
 make build-frontend  # Build React frontend
-npm run dist        # Build all platforms (DMG, Windows, Linux)
+npm run dist        # Build all platforms (macOS, Windows, Linux)
 ```
 
 ## Contributing
