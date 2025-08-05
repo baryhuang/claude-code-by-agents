@@ -12,66 +12,58 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            artifact_name: claude-code-webui-linux-x64
-          - os: ubuntu-latest
-            target: aarch64-unknown-linux-gnu
-            artifact_name: claude-code-webui-linux-arm64
+            platform: linux
+            arch: x64
+            artifact_pattern: "*.AppImage"
           - os: macos-latest
-            target: x86_64-apple-darwin
-            artifact_name: claude-code-webui-macos-x64
-          - os: macos-latest
-            target: aarch64-apple-darwin
-            artifact_name: claude-code-webui-macos-arm64
+            platform: mac
+            arch: universal
+            artifact_pattern: "*.dmg"
           - os: windows-latest
-            target: x86_64-pc-windows-msvc
-            artifact_name: claude-code-webui-windows-x64
+            platform: win
+            arch: x64
+            artifact_pattern: "Agentrooms Setup *.exe"
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Setup Deno
-        uses: denoland/setup-deno@v2
-        with:
-          deno-version: v2.x
-
-      - name: Install and cache Deno dependencies
-        run: deno install && deno cache cli/deno.ts
-        working-directory: backend
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: "npm"
-          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm install
 
       - name: Install frontend dependencies
         run: npm ci
         working-directory: frontend
 
+      - name: Install backend dependencies
+        run: npm ci
+        working-directory: backend
+
       - name: Build frontend
-        run: npm run build
-        working-directory: frontend
+        run: npm run build:frontend
 
-      - name: Copy frontend assets
-        run: node scripts/copy-frontend.js
-        working-directory: backend
+      - name: Install Python setuptools (Ubuntu only)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-setuptools
 
-      - name: Generate version.ts
-        run: node scripts/generate-version.js
-        working-directory: backend
+      - name: Build Electron app
+        run: npm run dist:${{ matrix.platform }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build backend binary
-        run: deno compile --allow-net --allow-run --allow-read --allow-env --include ./dist/static --target ${{ matrix.target }} --output ../dist/${{ matrix.artifact_name }} cli/deno.ts
-        working-directory: backend
-
-      - name: Upload artifact
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact_name }}
-          path: dist/${{ matrix.artifact_name }}*
+          name: agentrooms-${{ matrix.platform }}-${{ matrix.arch }}
+          path: dist/${{ matrix.artifact_pattern }}
 
   release:
     needs: build
@@ -145,9 +137,7 @@ jobs:
           node-version: "22"
           registry-url: "https://registry.npmjs.org"
           cache: "npm"
-          cache-dependency-path: |
-            backend/package-lock.json
-            frontend/package-lock.json
+          cache-dependency-path: backend/package-lock.json
 
       - name: Install backend dependencies
         run: npm ci
@@ -171,7 +161,7 @@ jobs:
           PACKAGE_FILE=$(ls *.tgz)
           npm install -g "./$PACKAGE_FILE"
           # Test CLI functionality
-          claude-code-webui --version
+          agentrooms --version
         working-directory: backend
 
       - name: Publish to npm (dry-run)
