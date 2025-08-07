@@ -174,20 +174,7 @@ MIT License - same as the original Claude Code Web Agent project.
 
 ## Roadmap
 
-### Planned Features
+### Immediate Items
 - [ ] Siri Shortcuts integration for quick agent interactions
-- [ ] iPad-specific layout optimizations
-- [ ] Offline conversation history caching
-- [ ] Push notifications for agent responses
-- [ ] Widgets for quick agent access
 - [ ] iPad multitasking and Split View support
-- [ ] Apple Pencil support for drawing/annotations
 - [ ] Document picker integration for file operations
-
-### Technical Improvements
-- [ ] Core Data for advanced conversation storage
-- [ ] Background sync with CloudKit
-- [ ] Advanced networking with retry and caching
-- [ ] Performance optimizations for large conversation histories
-- [ ] Memory management improvements
-- [ ] Comprehensive unit and UI testing
