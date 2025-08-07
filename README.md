@@ -19,6 +19,7 @@ https://github.com/user-attachments/assets/0b4e6709-d9b9-4676-85e0-aec8e15fd097
 - **Free orchestrator Anthropic usage**: No API key required (uses my endpoint to cover your cost by default ) Sure you can bring your own API_KEY
 - **Custom API support**: Configure your own endpoint in Settings
 - **Dynamic agents**: Add/remove agents via web UI
+- **Future: Standalone SDK**: OpenAI-compatible npm package for headless deployments ([roadmap](#roadmap-standalone-sdk-package))
 
 ## API Design
 
@@ -146,6 +147,55 @@ Agent 1 ← Step 1 ← File Dependencies ← Coordination Logic
 Agent 2 ← Step 2 ← Read Step 1 Output  
 Agent N ← Step N ← Read Previous Results
 ```
+
+## Roadmap: Standalone SDK Package
+
+### Vision: OpenAI-Compatible Remote Claude Code SDK
+
+**Future Enhancement**: We're planning to extract the backend service into a standalone npm package that developers can run independently without the UI:
+
+```bash
+# Future vision - standalone SDK package
+npx @agentrooms/claude-code-sdk --port 8080
+# or
+npm install -g @agentrooms/claude-code-sdk
+agentrooms-server --port 8080
+```
+
+**Key Benefits:**
+- **Zero UI Dependencies**: Pure API server for headless deployments
+- **OpenAI API Compatibility**: Drop-in replacement for OpenAI client libraries
+- **Remote Claude Code Control**: What the official Claude Code SDK doesn't provide
+- **Docker-Ready**: Containerized deployments for cloud infrastructure
+- **Language Agnostic**: Any language with HTTP client support can use it
+
+**OpenAI-Compatible Endpoints:**
+```bash
+# Standard OpenAI chat completions format
+POST /v1/chat/completions
+{
+  "model": "claude-3-5-sonnet-20241022",
+  "messages": [{"role": "user", "content": "Hello"}],
+  "stream": true,
+  "working_directory": "/path/to/project"  # Agentrooms extension
+}
+
+# Existing Agentrooms endpoints remain available
+POST /api/chat
+GET /api/projects
+GET /api-docs  # Swagger documentation
+```
+
+**Use Cases:**
+- **CI/CD Pipelines**: Integrate Claude Code into automated workflows
+- **Custom Applications**: Build your own UI on top of the API
+- **Multi-Language Support**: Python, JavaScript, Go, Rust clients
+- **Microservices Architecture**: Deploy as a dedicated Claude service
+- **Cloud Deployments**: AWS Lambda, Google Cloud Run, Azure Functions
+
+This would make remote Claude Code access available to the broader developer ecosystem, not just through our desktop UI.
+
+---
 
 ## Development
 
