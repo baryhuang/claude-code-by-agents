@@ -1,6 +1,12 @@
-# Claude Code Agentrooms UI + Remote Claude Code API
+# Agentrooms: Multi-Agent Development Workspace
+
+**Two ways to use this project:**
+1. **🖥️ Desktop UI**: Visual workspace for managing multiple Claude Code agents
+2. **🔌 Direct API**: Programmatic access to remote Claude Code instances (not available in official SDK)
 
 Multi-agent workspace for collaborative development with Claude CLI. Route tasks to specialized agents (local or remote), coordinate complex workflows.
+
+> **Why this matters for developers**: The Claude Code SDK doesn't natively support remote agent control. This project fills that gap by providing REST APIs to control Claude Code instances running on remote machines, plus a UI for non-technical users.
 
 > **Current Status**: This version supports one agent room. Multiple rooms support is planned for future releases - contributions welcome!
 
@@ -13,14 +19,42 @@ https://github.com/user-attachments/assets/0b4e6709-d9b9-4676-85e0-aec8e15fd097
 
 ## Key Features
 
+### 🖥️ UI Features (Desktop App)
 - **`@agent-name` mentions**: Direct execution, no orchestration overhead
 - **Multi-agent workflows**: Automatic task decomposition and coordination  
 - **Local + Remote agents**: Mix local agents and remote machines (Mac Mini browser agent, cloud instances, etc.)
-- **Free orchestrator Anthropic usage**: No API key required (uses my endpoint to cover your cost by default ) Sure you can bring your own API_KEY
-- **Custom API support**: Configure your own endpoint in Settings
 - **Dynamic agents**: Add/remove agents via web UI
+- **Agent Hub**: Visual grid of all configured agents with status indicators
+- **Conversation History**: Agent-specific conversation management and restoration
 
-## API Design
+### 🔌 API Features (Developers)
+- **Remote Claude Code Control**: REST APIs to control Claude Code instances on remote machines
+- **Session Continuity**: Maintain conversation context across API calls
+- **Multi-Project Support**: Switch between different codebases/working directories
+- **Real-time Streaming**: Get live responses from Claude Code operations
+- **Request Management**: Abort long-running operations programmatically
+- **Swagger Documentation**: Interactive API docs at `/api-docs`
+
+### ⚡ Shared Features
+- **Free orchestrator Anthropic usage**: No API key required (uses my endpoint to cover your cost by default) Sure you can bring your own API_KEY
+- **Custom API support**: Configure your own endpoint in Settings
+
+## Choose Your Approach
+
+### 🖥️ UI Approach (Non-Technical Users)
+Perfect for users who prefer visual interfaces and want to coordinate multiple agents through a desktop application.
+
+### 🔌 API Approach (Developers)
+For developers who need programmatic control over remote Claude Code instances or want to integrate agent capabilities into their own applications.
+
+**Why use the API directly?**
+- **Custom integrations**: Build Claude Code into your own tools
+- **CI/CD automation**: Integrate agents into your development pipeline  
+- **Script automation**: Write scripts that coordinate multiple agents
+- **Advanced workflows**: Create complex multi-step processes
+- **Remote access**: Control Claude Code on servers, Mac Minis, etc.
+
+## API Architecture
 
 - **Planner**: Uses API key for task analysis and coordination
 - **Agents**: Use your local Claude CLI subscription for execution
@@ -33,9 +67,10 @@ https://github.com/user-attachments/assets/0b4e6709-d9b9-4676-85e0-aec8e15fd097
 1. **Install Claude CLI**: Download from [Claude Code documentation](https://docs.anthropic.com/en/docs/claude-code)
 2. **Authenticate**: Run `claude auth login` and complete the authentication
 
-### Option 1: Desktop App (Recommended)
+## 🖥️ UI Setup (Desktop App)
 
-**Download Pre-built App:**
+### Option 1: Download Pre-built App (Recommended)
+
 - Download from [Releases](https://github.com/baryhuang/claude-code-by-agents/releases)
 - **Windows**: `claude-code-webui-windows-x64.exe` - Run the installer
 - **macOS Intel**: `claude-code-webui-macos-x64` - Drag to Applications folder  
@@ -44,7 +79,7 @@ https://github.com/user-attachments/assets/0b4e6709-d9b9-4676-85e0-aec8e15fd097
 - **Linux ARM64**: `claude-code-webui-linux-arm64` - Make executable and run
 - **Important**: Start the backend service separately (see Backend Setup below)
 
-**Build from Source:**
+### Option 2: Build from Source
 ```bash
 # Clone and build
 git clone https://github.com/baryhuang/claude-code-by-agents.git
@@ -56,7 +91,18 @@ npm run dist:win     # Creates Windows installer in dist/ folder
 npm run dist:linux   # Creates Linux AppImage in dist/ folder
 ```
 
-### Option 2: Web Development
+## 🔌 API Setup (Developers)
+
+### For Direct API Access
+```bash
+# Start backend service only
+cd backend && deno task dev        # Backend: http://localhost:8080
+
+# API is now available at http://localhost:8080/api/*
+# Interactive docs at http://localhost:8080/api-docs
+```
+
+### For Web Development (API + UI)
 ```bash
 # Start backend service
 cd backend && deno task dev        # Backend: http://localhost:8080
@@ -94,7 +140,9 @@ cd path/to/agent2 && deno task dev --port 8082   # Local agent
 # Configure agents in Settings UI
 ```
 
-## Usage
+## Usage Examples
+
+### 🖥️ Using the Desktop UI
 
 **Single agent**: `@api-agent add user authentication`
 - Direct HTTP call to agent endpoint
@@ -104,6 +152,34 @@ cd path/to/agent2 && deno task dev --port 8082   # Local agent
 - Orchestrator analyzes and creates execution plan
 - Coordinates file-based communication between agents
 - Manages dependencies automatically
+
+### 🔌 Using the API Directly
+
+**Start a conversation with Claude Code:**
+```bash
+curl -X POST http://localhost:8080/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "Create a new Express.js API endpoint for user authentication",
+    "workingDirectory": "/path/to/your/project",
+    "requestId": "unique-request-id"
+  }'
+```
+
+**Continue a conversation (with session continuity):**
+```bash
+curl -X POST http://localhost:8080/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "Add password hashing to that endpoint",
+    "sessionId": "session-from-previous-response",
+    "workingDirectory": "/path/to/your/project",
+    "requestId": "another-unique-id"
+  }'
+```
+
+**Explore the interactive API documentation:**
+Visit `http://localhost:8080/api-docs` in your browser for full API reference with examples.
 
 ## Configuration
 
@@ -126,6 +202,7 @@ cd path/to/agent2 && deno task dev --port 8082   # Local agent
 
 ## Architecture
 
+### 🖥️ UI Architecture
 ```
 Frontend → Main Backend (Orchestrator) → Local Agent 1 (localhost:8081)
                                       → Local Agent 2 (localhost:8082)  
@@ -133,19 +210,42 @@ Frontend → Main Backend (Orchestrator) → Local Agent 1 (localhost:8081)
                                       → Remote Agent N (cloud-instance:8081)
 ```
 
+### 🔌 API Architecture
+```
+Your App → REST API → Claude Code SDK → Local Claude CLI
+         → Streaming responses
+         → Session continuity
+         → Multi-project support
+```
+
 **Single Agent Flow**:
 ```
-User → @agent-name → HTTP Request → Agent's Claude Instance → Response
+User/API → @agent-name → HTTP Request → Agent's Claude Instance → Response
 ```
 
 **Multi-Agent Flow**:
 ```
-User → General Request → Orchestrator Analysis → Execution Plan
-                                                ↓
+User/API → General Request → Orchestrator Analysis → Execution Plan
+                                                   ↓
 Agent 1 ← Step 1 ← File Dependencies ← Coordination Logic
 Agent 2 ← Step 2 ← Read Step 1 Output  
 Agent N ← Step N ← Read Previous Results
 ```
+
+## 🔌 API Reference
+
+**Core Endpoints:**
+- `POST /api/chat` - Main Claude Code interaction
+- `GET /api/projects` - List available projects
+- `POST /api/abort/:requestId` - Cancel operations
+- `GET /api/agent-projects` - Remote agent projects
+- `GET /api/agent-histories/:project` - Conversation history
+
+**Interactive Documentation:**
+- **Swagger UI**: `http://localhost:8080/api-docs`
+- **OpenAPI Spec**: `http://localhost:8080/api-docs.json`
+
+All endpoints support streaming responses and maintain session continuity for natural conversations with Claude Code.
 
 ## Development
 
