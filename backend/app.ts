@@ -16,15 +16,19 @@ import { handleProjectsRequest } from "./handlers/projects.ts";
 import { handleHistoriesRequest } from "./handlers/histories.ts";
 import { handleConversationRequest } from "./handlers/conversations.ts";
 import { handleChatRequest } from "./handlers/chat.ts";
+import { handleMultiAgentChatRequest } from "./handlers/multiAgentChat.ts";
 import { handleAbortRequest } from "./handlers/abort.ts";
 import { handleAgentProjectsRequest } from "./handlers/agentProjects.ts";
 import { handleAgentHistoriesRequest } from "./handlers/agentHistories.ts";
 import { handleAgentConversationRequest } from "./handlers/agentConversations.ts";
+import { globalRegistry } from "./providers/registry.ts";
+import { globalImageHandler } from "./utils/imageHandling.ts";
 
 export interface AppConfig {
   debugMode: boolean;
   staticPath: string;
   claudePath: string; // Now required since validateClaudeCli always returns a path
+  openaiApiKey?: string; // Optional OpenAI API key for multi-agent support
 }
 
 export function createApp(
@@ -32,6 +36,9 @@ export function createApp(
   config: AppConfig,
 ): Hono<ConfigContext> {
   const app = new Hono<ConfigContext>();
+
+  // Initialize multi-agent system
+  initializeMultiAgentSystem(config);
 
   // Store AbortControllers for each request (shared with chat handler)
   const requestAbortControllers = new Map<string, AbortController>();
@@ -93,6 +100,9 @@ export function createApp(
   );
 
   app.post("/api/chat", (c) => handleChatRequest(c, requestAbortControllers));
+  
+  // Multi-agent chat endpoint
+  app.post("/api/multi-agent-chat", (c) => handleMultiAgentChatRequest(c, requestAbortControllers));
 
   // Static file serving with SPA fallback
   // Serve static assets (CSS, JS, images, etc.)
@@ -121,4 +131,29 @@ export function createApp(
   });
 
   return app;
+}
+
+/**
+ * Initialize the multi-agent system with providers and default agents
+ */
+function initializeMultiAgentSystem(config: AppConfig): void {
+  // Initialize image handler
+  globalImageHandler.initialize().catch(error => {
+    console.warn("Failed to initialize image handler:", error);
+  });
+  
+  // Initialize providers
+  globalRegistry.initializeDefaultProviders({
+    openaiApiKey: config.openaiApiKey || process.env.OPENAI_API_KEY,
+    claudePath: config.claudePath,
+  });
+  
+  // Create default agents
+  globalRegistry.createDefaultAgents();
+  
+  if (config.debugMode) {
+    console.debug("[Multi-Agent] Initialized with agents:", 
+      globalRegistry.getAllAgents().map(a => ({ id: a.id, provider: a.provider }))
+    );
+  }
 }
