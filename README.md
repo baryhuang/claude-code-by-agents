@@ -1,4 +1,4 @@
-# Claude Code Agentrooms UI + Exposed API Service
+# Claude Code Agentrooms UI + Remote Claude Code API
 
 Multi-agent workspace for collaborative development with Claude CLI. Route tasks to specialized agents (local or remote), coordinate complex workflows.
 
