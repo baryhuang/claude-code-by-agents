@@ -185,6 +185,34 @@ make build-frontend  # Build React frontend
 npm run dist        # Build all platforms (macOS, Windows, Linux)
 ```
 
+## Roadmap
+
+### Immediate (Next Release)
+- **Standalone Backend Package**: Extract backend service as `npx @agentrooms/claude-code-server` 
+- **OpenAI-Compatible API**: Standard `/v1/chat/completions` endpoint with `working_directory` extension
+- **Docker Support**: `docker run agentrooms/claude-code-server` for headless deployments
+- **Multi-Language SDK**: Python, Go, Rust clients via standard OpenAI libraries
+
+### Near-Term Improvements  
+- **Session Persistence**: Survive server restarts without losing conversation context
+- **Authentication**: Optional API keys for production deployments
+- **Rate Limiting**: Prevent API abuse in public deployments
+- **Health Monitoring**: `/health` endpoint with Claude Code SDK status
+
+### Community-Driven Features
+- **Documentation**: API examples for popular languages (Python, JavaScript, Go)
+- **CI/CD Examples**: GitHub Actions workflows using the API
+- **Deployment Guides**: AWS Lambda, Google Cloud Run, Heroku examples
+- **Tool Extensions**: Custom tool definitions for specialized workflows
+
+### Technical Debt
+- **Test Coverage**: Comprehensive backend and frontend testing
+- **Error Handling**: Better error messages and retry logic  
+- **Performance**: Request queuing and concurrent session handling
+- **Security**: Input validation and XSS protection
+
+> **Contributing**: All features are community-driven. PRs welcome for any roadmap items.
+
 ## Contributing
 
 - **Lefthook**: Pre-commit hooks ensure quality
