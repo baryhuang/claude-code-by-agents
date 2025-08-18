@@ -171,6 +171,7 @@ async function* executeOrchestratorWorkflow(
     description: string;
     isOrchestrator?: boolean;
   }>,
+  claudeAuth?: ChatRequest['claudeAuth'],
 ): AsyncGenerator<StreamResponse> {
   let abortController: AbortController;
 
@@ -188,8 +189,19 @@ async function* executeOrchestratorWorkflow(
     ];
 
 
+    // Use OAuth access token if provided, otherwise fall back to API key
+    const apiKey = claudeAuth?.accessToken || process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY;
+    
+    if (debugMode) {
+      const authMethod = claudeAuth?.accessToken ? "OAuth" : "API Key";
+      console.debug(`[DEBUG] Orchestrator using ${authMethod} authentication`);
+      if (claudeAuth?.accessToken) {
+        console.debug(`[DEBUG] OAuth user: ${claudeAuth.account?.email_address}`);
+      }
+    }
+
     const anthropic = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY,
+      apiKey: apiKey,
     });
 
     const tools: Anthropic.Tool[] = [
@@ -535,6 +547,26 @@ export async function handleChatRequest(
     );
   }
 
+  // Handle OAuth credentials if provided in the request
+  if (chatRequest.claudeAuth) {
+    try {
+      if (debugMode) {
+        console.debug("[DEBUG] Using OAuth credentials from request");
+        console.debug("[DEBUG] OAuth user:", chatRequest.claudeAuth.account?.email_address);
+        console.debug("[DEBUG] OAuth expires:", new Date(chatRequest.claudeAuth.expiresAt));
+      }
+      
+      // Write the OAuth credentials to the credentials file
+      // This will be used by the preload script to authenticate Claude Code
+      await writeClaudeCredentialsFile(chatRequest.claudeAuth);
+    } catch (error) {
+      console.error("[ERROR] Failed to write OAuth credentials:", error);
+      // Don't fail the request, fall back to system credentials
+    }
+  } else if (debugMode) {
+    console.debug("[DEBUG] No OAuth credentials provided, using system credentials");
+  }
+
   const stream = new ReadableStream({
     async start(controller) {
       try {
@@ -588,6 +620,7 @@ export async function handleChatRequest(
                 chatRequest.sessionId,
                 debugMode,
                 chatRequest.availableAgents,
+                chatRequest.claudeAuth,
               );
             }
           } else {
@@ -599,6 +632,7 @@ export async function handleChatRequest(
               chatRequest.sessionId,
               debugMode,
               chatRequest.availableAgents,
+              chatRequest.claudeAuth,
             );
           }
         } else {

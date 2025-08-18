@@ -8,6 +8,8 @@
  */
 
 import { build } from "esbuild";
+import { copyFileSync, mkdirSync } from "fs";
+import { dirname } from "path";
 
 // Build CLI bundle
 await build({
@@ -46,6 +48,15 @@ await build({
   ],
   sourcemap: true,
 });
+
+// Copy auth files to dist directory
+try {
+  mkdirSync("dist/auth", { recursive: true });
+  copyFileSync("auth/preload-script.js", "dist/auth/preload-script.js");
+  console.log("✅ Auth files copied to dist directory");
+} catch (error) {
+  console.warn("⚠️ Failed to copy auth files:", error.message);
+}
 
 console.log("✅ CLI bundle created successfully");
 console.log("✅ Lambda bundle created successfully");
