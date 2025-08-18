@@ -50,7 +50,14 @@ async function* executeAgentHttpRequest(
 
     if (debugMode) {
       console.debug(`[DEBUG] Making HTTP request to agent ${agent.id} at ${agent.apiEndpoint}`);
-      console.debug(`[DEBUG] Request payload:`, JSON.stringify(agentChatRequest, null, 2));
+      console.debug(`[DEBUG] Request payload (OAuth masked):`, {
+        ...agentChatRequest,
+        claudeAuth: agentChatRequest.claudeAuth ? {
+          ...agentChatRequest.claudeAuth,
+          accessToken: agentChatRequest.claudeAuth.accessToken ? `${agentChatRequest.claudeAuth.accessToken.substring(0, 10)}...` : undefined,
+          refreshToken: agentChatRequest.claudeAuth.refreshToken ? `${agentChatRequest.claudeAuth.refreshToken.substring(0, 10)}...` : undefined
+        } : undefined
+      });
     }
 
     // Make HTTP request to the agent's endpoint with timeout
@@ -66,7 +73,20 @@ async function* executeAgentHttpRequest(
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
+      const errorText = await response.text().catch(() => 'Unable to read error response');
+      if (debugMode) {
+        console.error(`[DEBUG] Agent HTTP request failed with status ${response.status}:`);
+        console.error(`[DEBUG] Error response:`, errorText);
+      }
+      
+      // Provide more specific error messages for authentication issues
+      if (response.status === 401 || response.status === 403) {
+        throw new Error(`Authentication failed for agent ${agent.id}. Please check OAuth credentials. Status: ${response.status}`);
+      } else if (response.status >= 500) {
+        throw new Error(`Agent ${agent.id} server error (${response.status}): ${errorText}`);
+      } else {
+        throw new Error(`HTTP error from agent ${agent.id}! status: ${response.status} - ${response.statusText}`);
+      }
     }
 
     if (!response.body) {
@@ -448,12 +468,20 @@ async function* executeClaudeCommand(
       authEnv = authEnvironment.env;
       executableArgs = authEnvironment.executableArgs;
       
+      // Enable preload script debug logging if we're in debug mode
+      if (debugMode) {
+        authEnv.DEBUG_PRELOAD_SCRIPT = "1";
+      }
+      
       if (debugMode && Object.keys(authEnv).length > 0) {
         console.log("[DEBUG] Using Claude OAuth authentication");
         console.log("[DEBUG] Auth environment variables:", Object.keys(authEnv));
       }
     } catch (authError) {
       console.warn("[WARN] Failed to prepare Claude auth environment:", authError);
+      if (debugMode) {
+        console.debug("[DEBUG] Auth error details:", authError);
+      }
       // Continue without auth - will fall back to system credentials
     }
 
@@ -514,9 +542,16 @@ async function* executeClaudeCommand(
       if (debugMode) {
         console.error("Claude Code execution failed:", error);
       }
+      
+      // Provide more specific error messages for authentication issues
+      let errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes("exit with code 1") || errorMessage.includes("authentication")) {
+        errorMessage = `Claude Code authentication failed. Please ensure valid OAuth credentials are provided. Original error: ${errorMessage}`;
+      }
+      
       yield {
         type: "error",
-        error: error instanceof Error ? error.message : String(error),
+        error: errorMessage,
       };
     }
   } finally {
@@ -547,7 +582,7 @@ export async function handleChatRequest(
     );
   }
 
-  // Handle OAuth credentials if provided in the request
+  // Handle OAuth credentials if provided in the request (both local and forwarded from other agents)
   if (chatRequest.claudeAuth) {
     try {
       if (debugMode) {
@@ -558,7 +593,12 @@ export async function handleChatRequest(
       
       // Write the OAuth credentials to the credentials file
       // This will be used by the preload script to authenticate Claude Code
+      // This works for both local execution and when this agent receives forwarded OAuth credentials
       await writeClaudeCredentialsFile(chatRequest.claudeAuth);
+      
+      if (debugMode) {
+        console.debug("[DEBUG] OAuth credentials written successfully for Claude Code execution");
+      }
     } catch (error) {
       console.error("[ERROR] Failed to write OAuth credentials:", error);
       // Don't fail the request, fall back to system credentials

@@ -49,7 +49,7 @@ export async function prepareClaudeAuthEnvironment(): Promise<{
   // Get the preload script path - it should be relative to the backend directory
   const preloadScriptPath = path.resolve(
     __dirname,
-    "../../auth/preload-script.js"
+    "./preload-script.cjs"
   );
 
   // Use the same credentials path
@@ -74,6 +74,14 @@ export async function prepareClaudeAuthEnvironment(): Promise<{
   console.log(`[AUTH] Preload script: ${preloadScriptPath}`);
   console.log(`[AUTH] Credentials path: ${credentialsPath}`);
   console.log(`[AUTH] NODE_OPTIONS: ${nodeOptions}`);
+  
+  // Verify preload script exists
+  const fs = await import("fs");
+  if (!fs.existsSync(preloadScriptPath)) {
+    console.error(`[AUTH] ERROR: Preload script not found at ${preloadScriptPath}`);
+  } else {
+    console.log(`[AUTH] Preload script verified at ${preloadScriptPath}`);
+  }
 
   return {
     env: authEnv,
