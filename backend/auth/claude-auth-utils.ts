@@ -89,8 +89,11 @@ export async function prepareClaudeAuthEnvironment(): Promise<{
   const fs = await import("fs");
   if (!fs.existsSync(preloadScriptPath)) {
     console.error(`[AUTH] ERROR: Preload script not found at ${preloadScriptPath}`);
+    console.error(`[AUTH] __dirname is: ${__dirname}`);
+    console.error(`[AUTH] Resolved path is: ${preloadScriptPath}`);
   } else {
     console.log(`[AUTH] Preload script verified at ${preloadScriptPath}`);
+    console.log(`[AUTH] NODE_OPTIONS will be: ${nodeOptions}`);
   }
 
   return {
@@ -140,6 +143,11 @@ export async function writeClaudeCredentialsFile(claudeAuth?: {
     try {
       const writtenData = await fs.promises.readFile(credentialsPath, "utf8");
       const parsedData = JSON.parse(writtenData);
+      console.log("[AUTH] Credentials file content preview:");
+      console.log("[AUTH] - Has claudeAiOauth:", !!parsedData.claudeAiOauth);
+      console.log("[AUTH] - Has accessToken:", !!parsedData.claudeAiOauth?.accessToken);
+      console.log("[AUTH] - AccessToken length:", parsedData.claudeAiOauth?.accessToken?.length || 0);
+      console.log("[AUTH] - Has refreshToken:", !!parsedData.claudeAiOauth?.refreshToken);
       if (parsedData.claudeAiOauth?.accessToken) {
         console.log("[AUTH] Verification: Credentials file written and readable");
       } else {

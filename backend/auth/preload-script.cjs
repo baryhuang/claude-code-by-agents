@@ -306,6 +306,9 @@ if (process.platform === "win32") {
   };
 }
 
+// Always log that preload script loaded (but briefly to avoid JSON issues)
+console.log("[PRELOAD-INIT] Loaded");
+
 if (loggingEnabled) {
   console.log(
     "[PRELOAD] Script loaded with platform support:",
