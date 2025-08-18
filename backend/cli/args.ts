@@ -42,7 +42,7 @@ export function parseCliArgs(runtime: Runtime): ParsedArgs {
     .option(
       "--host <host>",
       "Host address to bind to (use 0.0.0.0 for all interfaces)",
-      "127.0.0.1",
+      "0.0.0.0",
     )
     .option(
       "--claude-path <path>",
