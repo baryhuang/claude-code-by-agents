@@ -43,8 +43,8 @@ childProcess.execSync = function (command, options) {
     command.trim().startsWith("security find-generic-password ")
   ) {
     if (loggingEnabled) {
-      console.log("🔀 Intercepted execSync call:", command);
-      console.log("🔍 Environment check - CLAUDE_CREDENTIALS_PATH:", process.env.CLAUDE_CREDENTIALS_PATH);
+      console.log("[PRELOAD] Intercepted execSync call:", command);
+      console.log("[PRELOAD] Environment check - CLAUDE_CREDENTIALS_PATH:", process.env.CLAUDE_CREDENTIALS_PATH);
     }
 
     // Check if CLAUDE_CREDENTIALS_PATH is set
@@ -177,7 +177,7 @@ if (process.platform === "win32") {
       filePath.endsWith(".credentials.json")
     ) {
       if (loggingEnabled) {
-        console.log("✅ Mocking existsSync for credentials file:", filePath);
+        console.log("[PRELOAD] Mocking existsSync for credentials file:", filePath);
       }
       return true;
     }
@@ -215,7 +215,7 @@ if (process.platform === "win32") {
 
           // Keep refreshToken as-is for OAuth authentication
           if (loggingEnabled) {
-            console.log("🔐 Using OAuth credentials with refreshToken");
+            console.log("[PRELOAD] Using OAuth credentials with refreshToken");
           }
 
           // Return as string or buffer depending on options
@@ -308,7 +308,7 @@ if (process.platform === "win32") {
 
 if (loggingEnabled) {
   console.log(
-    "✅ Preload script loaded with platform support:",
+    "[PRELOAD] Script loaded with platform support:",
     process.platform
   );
 }

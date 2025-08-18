@@ -476,10 +476,8 @@ async function* executeClaudeCommand(
       authEnv = authEnvironment.env;
       executableArgs = authEnvironment.executableArgs;
       
-      // Enable preload script debug logging if we're in debug mode
-      if (debugMode) {
-        authEnv.DEBUG_PRELOAD_SCRIPT = "1";
-      }
+      // Disable preload script debug logging to prevent JSON parsing issues
+      authEnv.DEBUG_PRELOAD_SCRIPT = "0";
       
       if (debugMode && Object.keys(authEnv).length > 0) {
         console.log("[DEBUG] Using Claude OAuth authentication");
