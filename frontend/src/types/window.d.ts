@@ -5,6 +5,12 @@ declare global {
     electronAPI?: {
       platform: string;
       openExternal: (url: string) => void;
+      auth: {
+        startOAuth: () => Promise<{success: boolean, error?: string, message?: string, pendingAuth?: boolean}>;
+        completeOAuth: (authCode: string) => Promise<{success: boolean, session?: any, error?: string}>;
+        checkStatus: () => Promise<{success: boolean, isAuthenticated: boolean, session?: any, error?: string}>;
+        signOut: () => Promise<{success: boolean, error?: string}>;
+      };
       storage: {
         // Agent Configuration
         saveAgentConfig: (config: any) => Promise<{success: boolean, error?: string}>;

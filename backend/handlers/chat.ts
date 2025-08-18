@@ -2,6 +2,7 @@ import { Context } from "hono";
 import { AbortError, query } from "@anthropic-ai/claude-code";
 import Anthropic from "@anthropic-ai/sdk";
 import type { ChatRequest, StreamResponse } from "../../shared/types.ts";
+import { prepareClaudeAuthEnvironment, writeClaudeCredentialsFile } from "../auth/claude-auth-utils.ts";
 
 /**
  * Detects if the request is for the Orchestrator agent
@@ -419,37 +420,77 @@ async function* executeClaudeCommand(
       processedMessage = message.substring(1);
     }
 
+    // Prepare authentication environment
+    let authEnv: Record<string, string> = {};
+    let executableArgs: string[] = [];
+    
+    try {
+      // Write credentials file first
+      await writeClaudeCredentialsFile();
+      
+      // Prepare auth environment
+      const authEnvironment = await prepareClaudeAuthEnvironment();
+      authEnv = authEnvironment.env;
+      executableArgs = authEnvironment.executableArgs;
+      
+      if (debugMode && Object.keys(authEnv).length > 0) {
+        console.log("[DEBUG] Using Claude OAuth authentication");
+        console.log("[DEBUG] Auth environment variables:", Object.keys(authEnv));
+      }
+    } catch (authError) {
+      console.warn("[WARN] Failed to prepare Claude auth environment:", authError);
+      // Continue without auth - will fall back to system credentials
+    }
+
     // Create and store AbortController for this request
     abortController = new AbortController();
     requestAbortControllers.set(requestId, abortController);
 
-    for await (const sdkMessage of query({
-      prompt: processedMessage,
-      options: {
-        abortController,
-        executable: "node" as const,
-        executableArgs: [],
-        pathToClaudeCodeExecutable: claudePath,
-        ...(sessionId ? { resume: sessionId } : {}),
-        ...(allowedTools ? { allowedTools } : {}),
-        ...(workingDirectory ? { cwd: workingDirectory } : {}),
-        permissionMode: "bypassPermissions" as const,
-      },
-    })) {
-      // Debug logging of raw SDK messages
-      if (debugMode) {
-        console.debug("[DEBUG] Claude SDK Message:");
-        console.debug(JSON.stringify(sdkMessage, null, 2));
-        console.debug("---");
-      }
-
-      yield {
-        type: "claude_json",
-        data: sdkMessage,
-      };
+    // Apply auth environment to process.env temporarily
+    const originalEnv: Record<string, string | undefined> = {};
+    for (const [key, value] of Object.entries(authEnv)) {
+      originalEnv[key] = process.env[key];
+      process.env[key] = value;
     }
 
-    yield { type: "done" };
+    try {
+      for await (const sdkMessage of query({
+        prompt: processedMessage,
+        options: {
+          abortController,
+          executable: "node" as const,
+          executableArgs: executableArgs,
+          pathToClaudeCodeExecutable: claudePath,
+          ...(sessionId ? { resume: sessionId } : {}),
+          ...(allowedTools ? { allowedTools } : {}),
+          ...(workingDirectory ? { cwd: workingDirectory } : {}),
+          permissionMode: "bypassPermissions" as const,
+        },
+      })) {
+        // Debug logging of raw SDK messages
+        if (debugMode) {
+          console.debug("[DEBUG] Claude SDK Message:");
+          console.debug(JSON.stringify(sdkMessage, null, 2));
+          console.debug("---");
+        }
+
+        yield {
+          type: "claude_json",
+          data: sdkMessage,
+        };
+      }
+
+      yield { type: "done" };
+    } finally {
+      // Restore original environment variables
+      for (const [key, originalValue] of Object.entries(originalEnv)) {
+        if (originalValue === undefined) {
+          delete process.env[key];
+        } else {
+          process.env[key] = originalValue;
+        }
+      }
+    }
   } catch (error) {
     // Check if error is due to abort
     if (error instanceof AbortError) {

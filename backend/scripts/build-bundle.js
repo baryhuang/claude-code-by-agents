@@ -19,9 +19,16 @@ await build({
   outfile: "dist/cli/node.js",
   external: [
     "@anthropic-ai/claude-code",
+    "@anthropic-ai/sdk",
     "@hono/node-server",
     "hono",
     "commander",
+    "openai",
+    "node-fetch",
+    "formdata-node",
+    "abort-controller", 
+    "form-data-encoder",
+    "formdata-node/file-from-path",
   ],
   sourcemap: true,
 });

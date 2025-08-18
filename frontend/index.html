@@ -5,6 +5,20 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Agentrooms</title>
+    <!-- Content Security Policy for Electron security -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self' data: blob:;
+      script-src 'self' 'unsafe-inline';
+      style-src 'self' 'unsafe-inline';
+      img-src 'self' data: blob: https:;
+      media-src 'self' data: blob:;
+      font-src 'self' data:;
+      connect-src 'self' http://localhost:* http://127.0.0.1:* https:;
+      object-src 'none';
+      base-uri 'self';
+      form-action 'self';
+      frame-ancestors 'none';
+    ">
     <script>
       // Prevent flash of unstyled content by setting theme class early
       (function () {

@@ -2,6 +2,7 @@ import { MessageCircle, Users, Settings } from "lucide-react";
 import { useState } from "react";
 import { useAgentConfig } from "../../hooks/useAgentConfig";
 import { SettingsModal } from "../SettingsModal";
+import { AuthButton } from "../auth/AuthButton";
 
 interface SidebarProps {
   activeAgentId: string | null;
@@ -106,6 +107,10 @@ export function Sidebar({
 
       {/* Footer */}
       <div className="sidebar-header" style={{ borderTop: "1px solid var(--claude-border)", borderBottom: "none" }}>
+        {/* Authentication Section */}
+        <AuthButton />
+        
+        {/* Settings Button */}
         <button 
           className="sidebar-button"
           onClick={() => setShowSettings(true)}

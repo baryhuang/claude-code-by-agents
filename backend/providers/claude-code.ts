@@ -5,6 +5,7 @@ import type {
   ProviderOptions,
   ProviderResponse,
 } from "./types.ts";
+import { prepareClaudeAuthEnvironment, writeClaudeCredentialsFile } from "../auth/claude-auth-utils.ts";
 
 export class ClaudeCodeProvider implements AgentProvider {
   readonly id = "claude-code";
@@ -60,90 +61,129 @@ export class ClaudeCodeProvider implements AgentProvider {
         }
       }
       
-      // Execute Claude Code query
-      for await (const sdkMessage of query({
-        prompt: processedMessage,
-        options: {
-          abortController,
-          executable: "node" as const,
-          executableArgs: [],
-          pathToClaudeCodeExecutable: this.claudePath,
-          ...(request.sessionId ? { resume: request.sessionId } : {}),
-          ...(request.workingDirectory ? { cwd: request.workingDirectory } : {}),
-          permissionMode: "bypassPermissions" as const,
-        },
-      })) {
-        if (debugMode) {
-          console.debug(`[Claude Code] SDK Message:`, {
-            type: sdkMessage.type,
-            subtype: (sdkMessage as any).subtype,
-          });
-        }
+      // Prepare authentication environment
+      let authEnv: Record<string, string> = {};
+      let executableArgs: string[] = [];
+      
+      try {
+        // Write credentials file first
+        await writeClaudeCredentialsFile();
         
-        // Convert SDK message to provider response
-        if (sdkMessage.type === "assistant") {
-          // Extract content based on actual SDK message structure
-          const messageData = sdkMessage as any;
-          let content = "";
+        // Prepare auth environment
+        const authEnvironment = await prepareClaudeAuthEnvironment();
+        authEnv = authEnvironment.env;
+        executableArgs = authEnvironment.executableArgs;
+        
+        if (debugMode && Object.keys(authEnv).length > 0) {
+          console.debug("[Claude Code] Using OAuth authentication");
+        }
+      } catch (authError) {
+        console.warn("[Claude Code] Failed to prepare auth environment:", authError);
+        // Continue without auth - will fall back to system credentials
+      }
+      
+      // Apply auth environment to process.env temporarily
+      const originalEnv: Record<string, string | undefined> = {};
+      for (const [key, value] of Object.entries(authEnv)) {
+        originalEnv[key] = process.env[key];
+        process.env[key] = value;
+      }
+      
+      try {
+        // Execute Claude Code query
+        for await (const sdkMessage of query({
+          prompt: processedMessage,
+          options: {
+            abortController,
+            executable: "node" as const,
+            executableArgs: executableArgs,
+            pathToClaudeCodeExecutable: this.claudePath,
+            ...(request.sessionId ? { resume: request.sessionId } : {}),
+            ...(request.workingDirectory ? { cwd: request.workingDirectory } : {}),
+            permissionMode: "bypassPermissions" as const,
+          },
+        })) {
+          if (debugMode) {
+            console.debug(`[Claude Code] SDK Message:`, {
+              type: sdkMessage.type,
+              subtype: (sdkMessage as any).subtype,
+            });
+          }
           
-          if (messageData.message?.content) {
-            if (Array.isArray(messageData.message.content)) {
-              content = messageData.message.content.map((c: any) => 
-                typeof c === "string" ? c : 
-                c.type === "text" ? c.text : 
-                JSON.stringify(c)
-              ).join("");
-            } else if (typeof messageData.message.content === "string") {
-              content = messageData.message.content;
-            } else {
-              content = JSON.stringify(messageData.message.content);
-            }
-          } else {
-            content = JSON.stringify(messageData);
-          }
+          // Convert SDK message to provider response
+          if (sdkMessage.type === "assistant") {
+            // Extract content based on actual SDK message structure
+            const messageData = sdkMessage as any;
+            let content = "";
             
-          yield {
-            type: "text",
-            content,
-            metadata: {
-              model: messageData.model,
-            },
-          };
-        }
-        
-        // Handle tool use - check if the message contains tool use information
-        if ((sdkMessage as any).message?.content) {
-          const messageContent = (sdkMessage as any).message.content;
-          if (Array.isArray(messageContent)) {
-            for (const contentItem of messageContent) {
-              if (contentItem.type === "tool_use") {
-                yield {
-                  type: "tool_use",
-                  toolName: contentItem.name,
-                  toolInput: contentItem.input,
-                };
+            if (messageData.message?.content) {
+              if (Array.isArray(messageData.message.content)) {
+                content = messageData.message.content.map((c: any) => 
+                  typeof c === "string" ? c : 
+                  c.type === "text" ? c.text : 
+                  JSON.stringify(c)
+                ).join("");
+              } else if (typeof messageData.message.content === "string") {
+                content = messageData.message.content;
+              } else {
+                content = JSON.stringify(messageData.message.content);
               }
+            } else {
+              content = JSON.stringify(messageData);
             }
-          }
-        }
-        
-        // Handle system messages (including screenshot captures)
-        if (sdkMessage.type === "system") {
-          // Check if this is a screenshot capture result
-          const messageStr = JSON.stringify(sdkMessage);
-          if (messageStr.includes("screenshot") || messageStr.includes("capture")) {
+              
             yield {
-              type: "image",
-              content: "Screenshot captured successfully",
+              type: "text",
+              content,
               metadata: {
-                model: (sdkMessage as any).model,
+                model: messageData.model,
               },
             };
           }
+          
+          // Handle tool use - check if the message contains tool use information
+          if ((sdkMessage as any).message?.content) {
+            const messageContent = (sdkMessage as any).message.content;
+            if (Array.isArray(messageContent)) {
+              for (const contentItem of messageContent) {
+                if (contentItem.type === "tool_use") {
+                  yield {
+                    type: "tool_use",
+                    toolName: contentItem.name,
+                    toolInput: contentItem.input,
+                  };
+                }
+              }
+            }
+          }
+          
+          // Handle system messages (including screenshot captures)
+          if (sdkMessage.type === "system") {
+            // Check if this is a screenshot capture result
+            const messageStr = JSON.stringify(sdkMessage);
+            if (messageStr.includes("screenshot") || messageStr.includes("capture")) {
+              yield {
+                type: "image",
+                content: "Screenshot captured successfully",
+                metadata: {
+                  model: (sdkMessage as any).model,
+                },
+              };
+            }
+          }
+        }
+        
+        yield { type: "done" };
+      } finally {
+        // Restore original environment variables
+        for (const [key, originalValue] of Object.entries(originalEnv)) {
+          if (originalValue === undefined) {
+            delete process.env[key];
+          } else {
+            process.env[key] = originalValue;
+          }
         }
       }
-      
-      yield { type: "done" };
       
     } catch (error) {
       if (error instanceof AbortError) {
