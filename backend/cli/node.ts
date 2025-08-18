@@ -28,7 +28,7 @@ async function main(runtime: NodeRuntime) {
   // Node.js 20.11.0+ compatible with fallback for older versions
   const __dirname =
     import.meta.dirname ?? dirname(fileURLToPath(import.meta.url));
-  const staticAbsPath = join(__dirname, "../static");
+  const staticAbsPath = join(__dirname, "../dist/static");
   let staticRelPath = relative(process.cwd(), staticAbsPath);
   // Handle edge case where relative() returns empty string
   if (staticRelPath === "") {
