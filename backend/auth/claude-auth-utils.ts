@@ -32,9 +32,19 @@ export async function prepareClaudeAuthEnvironment(): Promise<{
       const expiresAt = credentials.claudeAiOauth.expiresAt;
       // Consider valid if expires more than 5 minutes from now
       hasValidCredentials = expiresAt > (now + 5 * 60 * 1000);
+      
+      console.log(`[AUTH] Found credentials for user: ${credentials.claudeAiOauth.account?.email_address}`);
+      console.log(`[AUTH] Token expires at: ${new Date(expiresAt).toISOString()}`);
+      console.log(`[AUTH] Current time: ${new Date(now).toISOString()}`);
+      console.log(`[AUTH] Token valid: ${hasValidCredentials}`);
+    } else {
+      console.log(`[AUTH] Missing required credential fields:`);
+      console.log(`[AUTH] - accessToken: ${!!credentials?.claudeAiOauth?.accessToken}`);
+      console.log(`[AUTH] - expiresAt: ${!!credentials?.claudeAiOauth?.expiresAt}`);
     }
   } catch (error) {
     // Credentials file doesn't exist or is invalid
+    console.log(`[AUTH] Could not read credentials file: ${error instanceof Error ? error.message : String(error)}`);
     hasValidCredentials = false;
   }
   
@@ -123,6 +133,21 @@ export async function writeClaudeCredentialsFile(claudeAuth?: {
     );
     
     console.log("[AUTH] OAuth credentials written to:", credentialsPath);
+    console.log("[AUTH] Credentials written for user:", claudeAuth.account?.email_address);
+    console.log("[AUTH] Token expires at:", new Date(claudeAuth.expiresAt).toISOString());
+    
+    // Verify the file was written correctly by reading it back
+    try {
+      const writtenData = await fs.promises.readFile(credentialsPath, "utf8");
+      const parsedData = JSON.parse(writtenData);
+      if (parsedData.claudeAiOauth?.accessToken) {
+        console.log("[AUTH] Verification: Credentials file written and readable");
+      } else {
+        console.log("[AUTH] WARNING: Credentials file written but missing accessToken");
+      }
+    } catch (verifyError) {
+      console.log("[AUTH] ERROR: Could not verify written credentials file:", verifyError);
+    }
   } else {
     // In the backend context without provided auth, credentials are managed by the Electron main process
     console.log("[AUTH] Backend context - using existing credentials file");

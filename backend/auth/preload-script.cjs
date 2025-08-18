@@ -44,6 +44,7 @@ childProcess.execSync = function (command, options) {
   ) {
     if (loggingEnabled) {
       console.log("🔀 Intercepted execSync call:", command);
+      console.log("🔍 Environment check - CLAUDE_CREDENTIALS_PATH:", process.env.CLAUDE_CREDENTIALS_PATH);
     }
 
     // Check if CLAUDE_CREDENTIALS_PATH is set
@@ -114,6 +115,7 @@ childProcess.spawnSync = function (command) {
   ) {
     if (loggingEnabled) {
       console.log("🔀 Intercepted spawnSync call:", command);
+      console.log("🔍 Environment check - CLAUDE_CREDENTIALS_PATH:", process.env.CLAUDE_CREDENTIALS_PATH);
     }
 
     // Check if CLAUDE_CREDENTIALS_PATH is set
@@ -211,25 +213,17 @@ if (process.platform === "win32") {
           );
           const credentials = JSON.parse(credentialsData);
 
-          // Replace refreshToken with empty string
-          if (
-            credentials.claudeAiOauth &&
-            credentials.claudeAiOauth.refreshToken
-          ) {
-            credentials.claudeAiOauth.refreshToken = "";
-            if (loggingEnabled) {
-              console.log("🔐 Replaced refreshToken with empty string");
-            }
+          // Keep refreshToken as-is for OAuth authentication
+          if (loggingEnabled) {
+            console.log("🔐 Using OAuth credentials with refreshToken");
           }
 
           // Return as string or buffer depending on options
           const result = JSON.stringify(credentials);
 
-          // TEMPORARY DEBUG: Log full credentials string being returned
-          console.log(
-            "🔍 TEMP DEBUG - Full credentials string being returned:"
-          );
-          console.log(result);
+          if (loggingEnabled) {
+            console.log("🔍 Returning credentials data to Claude Code");
+          }
 
           if (
             options &&

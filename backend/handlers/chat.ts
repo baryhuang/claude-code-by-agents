@@ -460,8 +460,16 @@ async function* executeClaudeCommand(
     let executableArgs: string[] = [];
     
     try {
+      if (debugMode) {
+        console.log("[DEBUG] Starting authentication setup...");
+      }
+      
       // Write credentials file first (with OAuth credentials if provided)
       await writeClaudeCredentialsFile(claudeAuth);
+      
+      if (debugMode) {
+        console.log("[DEBUG] Credentials file written, preparing auth environment...");
+      }
       
       // Prepare auth environment
       const authEnvironment = await prepareClaudeAuthEnvironment();
