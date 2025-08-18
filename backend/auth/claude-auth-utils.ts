@@ -82,11 +82,41 @@ export async function prepareClaudeAuthEnvironment(): Promise<{
 }
 
 /**
- * Placeholder for writing credentials file - this is handled by the Electron main process
- * The backend just checks if credentials exist and uses them
+ * Writes OAuth credentials to the credentials file
+ * @param claudeAuth - OAuth credentials to write, if not provided uses existing file
  */
-export async function writeClaudeCredentialsFile(): Promise<void> {
-  // In the backend context, we don't write credentials - they are managed by the Electron main process
-  // This function is a no-op for backend builds
-  console.log("[AUTH] Backend context - credentials are managed by Electron main process");
+export async function writeClaudeCredentialsFile(claudeAuth?: {
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number;
+  userId: string;
+  subscriptionType: string;
+  account: {
+    email_address: string;
+    uuid: string;
+  };
+}): Promise<void> {
+  const credentialsPath = path.join(
+    process.env.HOME || process.cwd(),
+    ".claude-credentials.json"
+  );
+
+  if (claudeAuth) {
+    // Write provided OAuth credentials
+    const credentials = {
+      claudeAiOauth: claudeAuth
+    };
+    
+    const fs = await import("fs");
+    await fs.promises.writeFile(
+      credentialsPath, 
+      JSON.stringify(credentials, null, 2), 
+      { mode: 0o600 }
+    );
+    
+    console.log("[AUTH] OAuth credentials written to:", credentialsPath);
+  } else {
+    // In the backend context without provided auth, credentials are managed by the Electron main process
+    console.log("[AUTH] Backend context - using existing credentials file");
+  }
 }

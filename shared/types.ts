@@ -10,6 +10,17 @@ export interface ChatRequest {
   requestId: string;
   allowedTools?: string[];
   workingDirectory?: string;
+  claudeAuth?: {
+    accessToken: string;
+    refreshToken: string;
+    expiresAt: number;
+    userId: string;
+    subscriptionType: string;
+    account: {
+      email_address: string;
+      uuid: string;
+    };
+  };
   availableAgents?: Array<{
     id: string;
     name: string;

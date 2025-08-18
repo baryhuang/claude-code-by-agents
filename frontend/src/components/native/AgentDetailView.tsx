@@ -10,6 +10,7 @@ import { useAbortController } from "../../hooks/chat/useAbortController";
 import { useRemoteAgentHistory } from "../../hooks/useRemoteAgentHistory";
 import { useHistoryLoader } from "../../hooks/useHistoryLoader";
 import { useMessageConverter } from "../../hooks/useMessageConverter";
+import { useClaudeAuth } from "../../hooks/useClaudeAuth";
 import { ChatInput } from "./ChatInput";
 import { ChatMessages } from "../chat/ChatMessages";
 import { PermissionDialog } from "../PermissionDialog";
@@ -106,6 +107,7 @@ export function AgentDetailView({
   const remoteHistory = useRemoteAgentHistory();
   const historyLoader = useHistoryLoader();
   const { convertConversationHistory } = useMessageConverter();
+  const { session: claudeSession } = useClaudeAuth();
 
   // Switch to this agent when component mounts
   useEffect(() => {
@@ -311,6 +313,14 @@ export function AgentDetailView({
         sessionId: agentSessionId || undefined,
         requestId,
         workingDirectory: agent.workingDirectory,
+        claudeAuth: claudeSession ? {
+          accessToken: claudeSession.accessToken,
+          refreshToken: claudeSession.refreshToken,
+          expiresAt: claudeSession.expiresAt,
+          userId: claudeSession.userId,
+          subscriptionType: claudeSession.subscriptionType,
+          account: claudeSession.account
+        } : undefined,
         availableAgents: config.agents.map(agent => ({
           id: agent.id,
           name: agent.name,

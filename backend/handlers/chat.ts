@@ -29,6 +29,7 @@ async function* executeAgentHttpRequest(
   requestId: string,
   requestAbortControllers: Map<string, AbortController>,
   sessionId?: string,
+  claudeAuth?: ChatRequest['claudeAuth'],
   debugMode?: boolean,
 ): AsyncGenerator<StreamResponse> {
   let abortController: AbortController;
@@ -44,6 +45,7 @@ async function* executeAgentHttpRequest(
       sessionId: sessionId,
       requestId: requestId,
       workingDirectory: agent.workingDirectory,
+      claudeAuth: claudeAuth,
     };
 
     if (debugMode) {
@@ -408,6 +410,7 @@ async function* executeClaudeCommand(
   sessionId?: string,
   allowedTools?: string[],
   workingDirectory?: string,
+  claudeAuth?: ChatRequest['claudeAuth'],
   debugMode?: boolean,
 ): AsyncGenerator<StreamResponse> {
   let abortController: AbortController;
@@ -425,8 +428,8 @@ async function* executeClaudeCommand(
     let executableArgs: string[] = [];
     
     try {
-      // Write credentials file first
-      await writeClaudeCredentialsFile();
+      // Write credentials file first (with OAuth credentials if provided)
+      await writeClaudeCredentialsFile(claudeAuth);
       
       // Prepare auth environment
       const authEnvironment = await prepareClaudeAuthEnvironment();
@@ -573,6 +576,7 @@ export async function handleChatRequest(
                 chatRequest.requestId,
                 requestAbortControllers,
                 chatRequest.sessionId,
+                chatRequest.claudeAuth,
                 debugMode,
               );
             } else {
@@ -607,6 +611,7 @@ export async function handleChatRequest(
             chatRequest.sessionId,
             chatRequest.allowedTools,
             chatRequest.workingDirectory,
+            chatRequest.claudeAuth,
             debugMode,
           );
         }
