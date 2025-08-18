@@ -590,20 +590,34 @@ function setupAuthHandlers() {
   // Check authentication status
   ipcMain.handle('auth:check-status', async (event) => {
     try {
+      console.log('[AUTH] Checking authentication status...');
       // Check if we have stored auth data
-      const authData = storage.loadSetting('claudeAuth');
+      const authResult = await storage.loadSetting('claudeAuth');
+      console.log('[AUTH] Storage result:', authResult.success ? 'success' : 'failed');
+      if (!authResult.success) {
+        console.log('[AUTH] Storage error:', authResult.error);
+      }
       
-      if (authData && authData.session) {
+      if (authResult.success && authResult.data && authResult.data.session) {
+        const authData = authResult.data;
         const now = Date.now();
         const expiresAt = authData.session.expiresAt;
+        console.log('[AUTH] Session expires at:', new Date(expiresAt).toISOString());
+        console.log('[AUTH] Current time:', new Date(now).toISOString());
+        console.log('[AUTH] Session valid:', expiresAt > now + 5 * 60 * 1000);
         
         if (expiresAt > now + 5 * 60 * 1000) {
+          console.log('[AUTH] Returning authenticated session');
           return {
             success: true,
             isAuthenticated: true,
             session: authData.session
           };
+        } else {
+          console.log('[AUTH] Session expired');
         }
+      } else {
+        console.log('[AUTH] No stored authentication data found');
       }
       
       return {

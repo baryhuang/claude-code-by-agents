@@ -39,9 +39,16 @@ export function useClaudeAuth() {
     try {
       setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
       
+      console.log("[DEBUG AUTH] Checking authentication status...");
+      console.log("[DEBUG AUTH] Window available:", typeof window !== 'undefined');
+      console.log("[DEBUG AUTH] ElectronAPI available:", !!window?.electronAPI);
+      console.log("[DEBUG AUTH] Auth API available:", !!window?.electronAPI?.auth);
+      
       // Check if we have access to electronAPI (only available in Electron context)
       if (typeof window !== 'undefined' && window.electronAPI?.auth) {
+        console.log("[DEBUG AUTH] Calling electronAPI.auth.checkStatus()...");
         const result = await window.electronAPI.auth.checkStatus();
+        console.log("[DEBUG AUTH] Auth status result:", result);
         
         if (result.success) {
           setAuthState({
@@ -62,6 +69,7 @@ export function useClaudeAuth() {
         }
       } else {
         // No Electron API available (probably running in browser)
+        console.log("[DEBUG AUTH] No Electron API available, setting unauthenticated state");
         setAuthState({
           isAuthenticated: false,
           session: null,

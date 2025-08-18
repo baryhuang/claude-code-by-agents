@@ -16,6 +16,7 @@ import { KEYBOARD_SHORTCUTS } from "../../utils/constants";
 import { useAgentConfig } from "../../hooks/useAgentConfig";
 import { useHistoryLoader } from "../../hooks/useHistoryLoader";
 import { useRemoteAgentHistory } from "../../hooks/useRemoteAgentHistory";
+import { useClaudeAuth } from "../../hooks/useClaudeAuth";
 import type { StreamingContext } from "../../hooks/streaming/useMessageProcessor";
 import { debugStreamingConnection, debugStreamingChunk, debugStreamingPerformance, warnProxyBuffering } from "../../utils/streamingDebug";
 
@@ -28,6 +29,7 @@ export function AgentHubPage() {
   const { getAgentById, getOrchestratorAgent, config, agents } = useAgentConfig();
   const historyLoader = useHistoryLoader();
   const remoteHistory = useRemoteAgentHistory();
+  const { session: claudeSession } = useClaudeAuth();
 
   const {
     messages,
@@ -312,11 +314,29 @@ export function AgentHubPage() {
         messageContent.replace(/^@(\w+(?:-\w+)*)\s+/, '') : 
         messageContent;
 
+      // Debug OAuth authentication state
+      console.log("🔐 [AUTH DEBUG] OAuth session state:", claudeSession ? "✅ AUTHENTICATED" : "❌ NOT AUTHENTICATED");
+      if (claudeSession) {
+        console.log("🔐 [AUTH DEBUG] OAuth user:", claudeSession.account?.email_address);
+        console.log("🔐 [AUTH DEBUG] OAuth expires:", new Date(claudeSession.expiresAt).toISOString());
+        console.log("🔐 [AUTH DEBUG] Including claudeAuth in request");
+      } else {
+        console.log("🔐 [AUTH DEBUG] No OAuth session - request will use system credentials");
+      }
+
       const chatRequest: ChatRequest = {
         message: messageToAgent,
         sessionId: sessionToUse || undefined,
         requestId,
         workingDirectory: currentAgent.workingDirectory,
+        claudeAuth: claudeSession ? {
+          accessToken: claudeSession.accessToken,
+          refreshToken: claudeSession.refreshToken,
+          expiresAt: claudeSession.expiresAt,
+          userId: claudeSession.userId,
+          subscriptionType: claudeSession.subscriptionType,
+          account: claudeSession.account
+        } : undefined,
         availableAgents: config.agents.map(agent => ({
           id: agent.id,
           name: agent.name,
@@ -442,6 +462,7 @@ export function AgentHubPage() {
     getAgentById,
     getOrchestratorAgent,
     config,
+    claudeSession,
   ]);
 
   // Handle execution of individual steps from orchestration plans
@@ -493,6 +514,14 @@ export function AgentHubPage() {
         sessionId: stepSessionId,
         requestId,
         workingDirectory: targetAgent.workingDirectory,
+        claudeAuth: claudeSession ? {
+          accessToken: claudeSession.accessToken,
+          refreshToken: claudeSession.refreshToken,
+          expiresAt: claudeSession.expiresAt,
+          userId: claudeSession.userId,
+          subscriptionType: claudeSession.subscriptionType,
+          account: claudeSession.account
+        } : undefined,
         availableAgents: config.agents.map(agent => ({
           id: agent.id,
           name: agent.name,
@@ -598,6 +627,7 @@ export function AgentHubPage() {
     currentMode,
     agentSessions,
     config,
+    claudeSession,
   ]);
 
   // Handle automatic execution of entire orchestration plan

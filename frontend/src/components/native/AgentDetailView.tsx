@@ -308,6 +308,16 @@ export function AgentDetailView({
         return;
       }
 
+      // Debug OAuth authentication state
+      console.log("🔐 [AUTH DEBUG] OAuth session state:", claudeSession ? "✅ AUTHENTICATED" : "❌ NOT AUTHENTICATED");
+      if (claudeSession) {
+        console.log("🔐 [AUTH DEBUG] OAuth user:", claudeSession.account?.email_address);
+        console.log("🔐 [AUTH DEBUG] OAuth expires:", new Date(claudeSession.expiresAt).toISOString());
+        console.log("🔐 [AUTH DEBUG] Including claudeAuth in request");
+      } else {
+        console.log("🔐 [AUTH DEBUG] No OAuth session - request will use system credentials");
+      }
+
       const chatRequest: ChatRequest = {
         message: messageContent,
         sessionId: agentSessionId || undefined,
@@ -430,6 +440,7 @@ export function AgentDetailView({
     createAbortHandler,
     agent,
     config,
+    claudeSession,
   ]);
 
   // Handle execution of individual steps from orchestration plans
@@ -475,6 +486,14 @@ export function AgentDetailView({
         sessionId: agentSessionId || undefined,
         requestId,
         workingDirectory: targetAgent.workingDirectory,
+        claudeAuth: claudeSession ? {
+          accessToken: claudeSession.accessToken,
+          refreshToken: claudeSession.refreshToken,
+          expiresAt: claudeSession.expiresAt,
+          userId: claudeSession.userId,
+          subscriptionType: claudeSession.subscriptionType,
+          account: claudeSession.account
+        } : undefined,
         availableAgents: config.agents.map(agent => ({
           id: agent.id,
           name: agent.name,
@@ -578,6 +597,7 @@ export function AgentDetailView({
     resetRequestState,
     getAgentById,
     config,
+    claudeSession,
   ]);
 
   // Handle automatic execution of entire orchestration plan
