@@ -16,13 +16,13 @@ const __dirname = dirname(__filename);
 // Set up environment variables for preload script patching
 const env = {
   ...process.env,
-  NODE_OPTIONS: '--require ./dist/auth/preload-script.js',
+  NODE_OPTIONS: '--require ./dist/auth/preload-script.cjs',
   CLAUDE_CREDENTIALS_PATH: join(process.env.HOME || process.cwd(), '.claude-credentials.json'),
   DEBUG_PRELOAD_SCRIPT: process.env.DEBUG_PRELOAD_SCRIPT || '0'
 };
 
 console.log('🚀 Starting backend with Claude OAuth preload script patching...');
-console.log('📁 Preload script:', './dist/auth/preload-script.js');
+console.log('📁 Preload script:', './dist/auth/preload-script.cjs');
 console.log('🗄️ Credentials path:', env.CLAUDE_CREDENTIALS_PATH);
 console.log('🐛 Debug logging:', env.DEBUG_PRELOAD_SCRIPT === '1' ? 'enabled' : 'disabled');
 console.log('');

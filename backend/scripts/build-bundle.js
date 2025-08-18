@@ -52,7 +52,7 @@ await build({
 // Copy auth files to dist directory
 try {
   mkdirSync("dist/auth", { recursive: true });
-  copyFileSync("auth/preload-script.js", "dist/auth/preload-script.js");
+  copyFileSync("auth/preload-script.cjs", "dist/auth/preload-script.cjs");
   console.log("✅ Auth files copied to dist directory");
 } catch (error) {
   console.warn("⚠️ Failed to copy auth files:", error.message);
