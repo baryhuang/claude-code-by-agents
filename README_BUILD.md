@@ -29,11 +29,13 @@ make electron
 # Build all components
 make build
 
-# Create DMG installer (when working)
-make dmg
+# Platform-specific builds
+make dmg          # macOS DMG installer
+npm run dist:win:setup  # Windows build (with Wine setup)
+npm run dist:linux      # Linux AppImage
 ```
 
-### Makefile Targets
+### Build Commands
 - `make install` - Install all dependencies
 - `make dev` - Start development servers (backend + frontend)
 - `make electron` - Run Electron app in development
@@ -41,6 +43,26 @@ make dmg
 - `make dist` - Build production Electron app
 - `make dmg` - Build macOS DMG installer
 - `make clean` - Clean build artifacts
+
+### Windows Build Setup
+Windows builds on Linux require Wine for cross-platform compilation:
+
+```bash
+# Automated setup (with interactive Wine installation)
+npm run dist:win:setup
+
+# Manual Wine installation
+sudo apt update && sudo apt install -y wine64
+npm run dist:win
+
+# Alternative: Build on Windows machine
+npm run build && npm run dist:win
+```
+
+### Cross-Platform Builds
+- **macOS**: `npm run dist:mac` (requires macOS)
+- **Windows**: `npm run dist:win` (requires Wine on Linux)
+- **Linux**: `npm run dist:linux`
 
 ## Architecture
 

@@ -4,6 +4,7 @@
   "version": "0.0.7",
   "description": "Multi-Agent Programming Collaboration Tool",
   "main": "electron/main.js",
+  "author": "Agentrooms Team",
   "scripts": {
     "electron": "electron .",
     "electron:dev": "NODE_ENV=development electron .",
@@ -13,7 +14,8 @@
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
     "dist:mac": "npm run build && electron-builder --mac",
-    "dist:win": "electron-builder --win",
+    "dist:win": "npm run build && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win",
+    "dist:win:setup": "./scripts/build-windows.sh",
     "dist:linux": "electron-builder --linux",
     "postinstall": "cd frontend && npm install && cd ../backend && npm install"
   },
@@ -64,7 +66,16 @@
       }
     },
     "win": {
-      "target": "nsis",
+      "target": [
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64"]
+        }
+      ],
       "icon": "assets/icon.ico"
     },
     "linux": {
