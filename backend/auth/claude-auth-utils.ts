@@ -1,5 +1,5 @@
-import path from "path";
-import { fileURLToPath } from "url";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 // Get __dirname equivalent for ESM modules
 const __filename = fileURLToPath(import.meta.url);
