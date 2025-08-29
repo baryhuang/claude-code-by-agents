@@ -16,22 +16,32 @@ https://github.com/user-attachments/assets/0b4e6709-d9b9-4676-85e0-aec8e15fd097
 - **`@agent-name` mentions**: Direct execution, no orchestration overhead
 - **Multi-agent workflows**: Automatic task decomposition and coordination  
 - **Local + Remote agents**: Mix local agents and remote machines (Mac Mini browser agent, cloud instances, etc.)
-- **Free orchestrator Anthropic usage**: No API key required (uses my endpoint to cover your cost by default ) Sure you can bring your own API_KEY
-- **Custom API support**: Configure your own endpoint in Settings
+- **No API key required**: Uses your Claude subscription via Claude CLI authentication  
+- **Multi-agent orchestration**: Intelligent task coordination between specialized agents
+- **Custom API support**: Configure your own endpoint in Settings for private deployment
 - **Dynamic agents**: Add/remove agents via web UI
 
-## API Design
+## Authentication & Billing
 
-- **Planner**: Uses API key for task analysis and coordination
-- **Agents**: Use your local Claude CLI subscription for execution
-- **Default**: Free public endpoint (zero setup)
-- **Custom**: Set your API URL in Settings for private deployment
+**✅ No API Keys Required** 
+- Uses your existing Claude subscription through Claude CLI authentication
+- Orchestrator and all agents run through your authenticated Claude session
+- Same billing model as using Claude Code directly
+
+**How it works:**
+1. **Claude CLI auth**: `claude auth login` authenticates your session
+2. **Subscription usage**: All requests count against your Claude subscription (Pro, Team, etc.)
+3. **No additional costs**: Same as running `claude` commands locally
+4. **OAuth integration**: Seamless authentication through Claude's official auth system
 
 ## Quick Start
 
 ### Prerequisites
-1. **Install Claude CLI**: Download from [Claude Code documentation](https://docs.anthropic.com/en/docs/claude-code)
-2. **Authenticate**: Run `claude auth login` and complete the authentication
+1. **Claude Subscription**: Requires Claude Pro, Team, or Enterprise subscription
+2. **Install Claude CLI**: Download from [Claude Code documentation](https://docs.anthropic.com/en/docs/claude-code)
+3. **Authenticate**: Run `claude auth login` and complete OAuth authentication
+   - This connects Agentrooms to your Claude subscription
+   - No API keys needed - uses OAuth tokens securely
 
 ### Option 1: Desktop App (Recommended)
 
@@ -109,9 +119,10 @@ cd path/to/agent2 && deno task dev --port 8082   # Local agent
 
 ### In Settings UI:
 
-1. **API Configuration**:
-   - Default: Uses free public endpoint 
-   - Custom: Set your API endpoint URL
+1. **Authentication** (Handled automatically):
+   - Uses your Claude CLI authentication (`claude auth login`)
+   - OAuth tokens managed securely by Claude CLI
+   - All requests billed to your Claude subscription
 
 2. **Add Agents** (local or remote):
    - Name: `API Backend Agent`
