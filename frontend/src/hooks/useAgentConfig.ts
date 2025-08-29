@@ -17,11 +17,11 @@ export interface AgentSystemConfig {
 const DEFAULT_AGENTS: Agent[] = [
   {
     id: "orchestrator",
-    name: "Orchestrator Agent",
+    name: "Claude Code Orchestrator",
     workingDirectory: "/tmp/orchestrator",
     color: "bg-gradient-to-r from-blue-500 to-purple-500",
-    description: "Intelligent orchestrator that coordinates multi-agent workflows",
-    apiEndpoint: "https://api.claudecode.run",
+    description: "Intelligent orchestrator that coordinates multi-agent workflows and manages complex projects",
+    apiEndpoint: "http://agents.claudecode.run",
     isOrchestrator: true
   }
 ];
