@@ -63,13 +63,8 @@ Resources:
     Properties:
       Name: !Sub "${AWS::StackName}-api-${Stage}"
       StageName: !Ref Stage
-      # Enable CloudWatch logging for debugging
-      MethodSettings:
-        - ResourcePath: "/*"
-          HttpMethod: "*"
-          LoggingLevel: ERROR
-          DataTraceEnabled: true
-          MetricsEnabled: true
+      # CloudWatch logging removed - requires account-level IAM role setup
+      # Can be re-enabled after setting up API Gateway CloudWatch role in account settings
       # Removed CORS from API Gateway - handled by Hono in Lambda function
       # Having CORS in both places causes 500 errors on OPTIONS requests
       # Remove binary media types that cause OPTIONS 500 errors
