@@ -448,12 +448,8 @@ async function* executeClaudeCommand(
   let abortController: AbortController;
 
   try {
-    // Process commands that start with '/'
-    let processedMessage = message;
-    if (message.startsWith("/")) {
-      // Remove the '/' and send just the command
-      processedMessage = message.substring(1);
-    }
+    // Pass message as-is (including slash commands like /cost, /help, etc.)
+    const processedMessage = message;
 
     // Prepare authentication environment
     let authEnv: Record<string, string> = {};
