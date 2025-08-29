@@ -45,15 +45,42 @@ export function createApp(
   // Store AbortControllers for each request (shared with chat handler)
   const requestAbortControllers = new Map<string, AbortController>();
 
-  // CORS middleware
+  // Enhanced CORS middleware for Lambda compatibility
   app.use(
     "*",
     cors({
       origin: "*",
-      allowMethods: ["GET", "POST", "OPTIONS"],
-      allowHeaders: ["Content-Type"],
+      allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      allowHeaders: [
+        "Content-Type", 
+        "X-Amz-Date", 
+        "Authorization", 
+        "X-Api-Key", 
+        "X-Amz-Security-Token",
+        "X-Requested-With"
+      ],
+      maxAge: 600,
+      credentials: false,
     }),
   );
+
+  // Error handling middleware with CORS headers
+  app.onError((error, c) => {
+    console.error('App Error:', error);
+    
+    // Ensure CORS headers are present in error responses
+    c.header('Access-Control-Allow-Origin', '*');
+    c.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    c.header('Access-Control-Allow-Headers', 'Content-Type, X-Amz-Date, Authorization, X-Api-Key, X-Amz-Security-Token, X-Requested-With');
+    
+    return c.json(
+      { 
+        error: 'Internal Server Error',
+        message: config.debugMode ? error.message : 'An error occurred'
+      }, 
+      500
+    );
+  });
 
   // Configuration middleware - makes app settings available to all handlers
   app.use(
@@ -443,6 +470,15 @@ export function createApp(
    *               $ref: '#/components/schemas/ErrorResponse'
    */
   app.post("/api/multi-agent-chat", (c) => handleMultiAgentChatRequest(c, requestAbortControllers));
+
+  // Explicit preflight OPTIONS handler for all routes
+  app.options("*", (c) => {
+    c.header('Access-Control-Allow-Origin', '*');
+    c.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    c.header('Access-Control-Allow-Headers', 'Content-Type, X-Amz-Date, Authorization, X-Api-Key, X-Amz-Security-Token, X-Requested-With');
+    c.header('Access-Control-Max-Age', '600');
+    return new Response('', { status: 204 });
+  });
 
   // Swagger API documentation routes
   /**

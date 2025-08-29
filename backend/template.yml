@@ -34,13 +34,14 @@ Resources:
         Variables:
           STAGE: !Ref Stage
       Events:
-        ApiGateway:
+        # Simplified API Gateway events - let Hono handle all routing
+        ApiProxy:
           Type: Api
           Properties:
             RestApiId: !Ref ApiGateway
             Path: /{proxy+}
             Method: ANY
-        ApiGatewayRoot:
+        ApiRoot:
           Type: Api
           Properties:
             RestApiId: !Ref ApiGateway
@@ -62,30 +63,39 @@ Resources:
     Properties:
       Name: !Sub "${AWS::StackName}-api-${Stage}"
       StageName: !Ref Stage
-      Cors:
-        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
-        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-        AllowOrigin: "'*'"
-      BinaryMediaTypes:
-        - "*/*"
-      DefinitionBody:
-        swagger: '2.0'
-        info:
-          title: Claude Web Agent API
-          version: '1.0'
-        paths:
-          /{proxy+}:
-            x-amazon-apigateway-any-method:
-              x-amazon-apigateway-integration:
-                type: aws_proxy
-                httpMethod: POST
-                uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ClaudeWebAgentFunction.Arn}/invocations"
-          /:
-            x-amazon-apigateway-any-method:
-              x-amazon-apigateway-integration:
-                type: aws_proxy
-                httpMethod: POST
-                uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ClaudeWebAgentFunction.Arn}/invocations"
+      # Enable CloudWatch logging for debugging
+      MethodSettings:
+        - ResourcePath: "/*"
+          HttpMethod: "*"
+          LoggingLevel: ERROR
+          DataTraceEnabled: true
+          MetricsEnabled: true
+      # Removed CORS from API Gateway - handled by Hono in Lambda function
+      # Having CORS in both places causes 500 errors on OPTIONS requests
+      # Remove binary media types that cause OPTIONS 500 errors
+      # BinaryMediaTypes:
+      #   - "*/*"
+
+  # Gateway Responses for CORS error handling
+  GatewayResponseDefault4XX:
+    Type: AWS::ApiGateway::GatewayResponse
+    Properties:
+      ResponseParameters:
+        gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+        gatewayresponse.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        gatewayresponse.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
+      ResponseType: DEFAULT_4XX
+      RestApiId: !Ref ApiGateway
+
+  GatewayResponseDefault5XX:
+    Type: AWS::ApiGateway::GatewayResponse
+    Properties:
+      ResponseParameters:
+        gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+        gatewayresponse.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        gatewayresponse.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
+      ResponseType: DEFAULT_5XX
+      RestApiId: !Ref ApiGateway
 
   # CloudWatch Log Group
   ApiLogGroup:

@@ -28,11 +28,10 @@ function shouldUseOrchestrator(message: string, availableAgents?: Array<{id: str
   }
   
   // Use orchestrator if there are available agents and:
-  // 1. Multiple agent mentions, OR  
-  // 2. General coordination request without specific agent mentions
+  // ONLY for multiple agent mentions - not for single agent or no mentions
   if (availableAgents && availableAgents.length > 0) {
     const mentionMatches = message.match(/@(\w+(?:-\w+)*)/g);
-    const result = !mentionMatches || mentionMatches.length > 1;
+    const result = mentionMatches && mentionMatches.length > 1;
     console.debug(`[DEBUG] shouldUseOrchestrator result:`, {
       mentionMatches,
       mentionCount: mentionMatches?.length || 0,

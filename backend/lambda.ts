@@ -18,5 +18,31 @@ const app = createApp(runtime, {
   claudePath: 'claude', // Assume claude is available in Lambda environment or provided as layer
 });
 
-// Export the Lambda handler
-export const handler = handle(app);
+// Wrap the handler with error handling and logging
+export const handler = async (event: any, context: any) => {
+  try {
+    console.log('Lambda Event:', JSON.stringify(event, null, 2));
+    
+    const result = await handle(app)(event, context);
+    
+    console.log('Lambda Response:', JSON.stringify(result, null, 2));
+    return result;
+  } catch (error) {
+    console.error('Lambda Handler Error:', error);
+    
+    // Return proper Lambda proxy response format on error
+    return {
+      statusCode: 500,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, X-Amz-Date, Authorization, X-Api-Key, X-Amz-Security-Token, X-Requested-With',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
+        error: 'Internal Server Error',
+        message: process.env.NODE_ENV !== 'production' ? error.message : 'An error occurred'
+      }),
+    };
+  }
+};
