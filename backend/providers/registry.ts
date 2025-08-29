@@ -1,12 +1,13 @@
 import type { AgentProvider } from "./types.ts";
 import { OpenAIProvider } from "./openai.ts";
 import { ClaudeCodeProvider } from "./claude-code.ts";
+import { AnthropicProvider } from "./anthropic.ts";
 
 export interface AgentConfiguration {
   id: string;
   name: string;
   description: string;
-  provider: string; // "openai" | "claude-code"
+  provider: string; // "openai" | "claude-code" | "anthropic"
   apiEndpoint?: string; // For remote agents
   workingDirectory?: string;
   isOrchestrator?: boolean;
@@ -73,6 +74,7 @@ export class ProviderRegistry {
   initializeDefaultProviders(options: {
     openaiApiKey?: string;
     claudePath?: string;
+    anthropicApiKey?: string;
   }): void {
     // Register OpenAI provider if API key is available
     if (options.openaiApiKey) {
@@ -84,6 +86,12 @@ export class ProviderRegistry {
     if (options.claudePath) {
       const claudeCodeProvider = new ClaudeCodeProvider(options.claudePath);
       this.registerProvider(claudeCodeProvider);
+    }
+    
+    // Register Anthropic provider if API key is available
+    if (options.anthropicApiKey) {
+      const anthropicProvider = new AnthropicProvider(options.anthropicApiKey);
+      this.registerProvider(anthropicProvider);
     }
   }
   
@@ -112,14 +120,19 @@ export class ProviderRegistry {
       workingDirectory: process.cwd(),
     });
     
-    // Orchestrator agent (for coordination)
+    // Orchestrator agent - use Anthropic API if available, otherwise Claude Code
+    const orchestratorProvider = this.getProvider("anthropic") ? "anthropic" : "claude-code";
     this.registerAgent({
       id: "orchestrator",
       name: "Orchestrator",
       description: "Coordinates multi-agent workflows and manages task delegation",
-      provider: "claude-code",
+      provider: orchestratorProvider,
       workingDirectory: "/tmp/orchestrator",
       isOrchestrator: true,
+      config: {
+        temperature: 0.7,
+        maxTokens: 4000,
+      },
     });
   }
 }

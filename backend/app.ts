@@ -30,6 +30,7 @@ export interface AppConfig {
   staticPath: string;
   claudePath: string; // Now required since validateClaudeCli always returns a path
   openaiApiKey?: string; // Optional OpenAI API key for multi-agent support
+  anthropicApiKey?: string; // Optional Anthropic API key for orchestrator mode
 }
 
 export function createApp(
@@ -571,6 +572,7 @@ function initializeMultiAgentSystem(config: AppConfig): void {
   globalRegistry.initializeDefaultProviders({
     openaiApiKey: config.openaiApiKey || process.env.OPENAI_API_KEY,
     claudePath: config.claudePath,
+    anthropicApiKey: config.anthropicApiKey || process.env.ANTHROPIC_API_KEY,
   });
   
   // Create default agents

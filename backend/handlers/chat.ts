@@ -3,6 +3,7 @@ import { AbortError, query } from "@anthropic-ai/claude-code";
 import Anthropic from "@anthropic-ai/sdk";
 import type { ChatRequest, StreamResponse } from "../../shared/types.ts";
 import { prepareClaudeAuthEnvironment, writeClaudeCredentialsFile } from "../auth/claude-auth-utils.ts";
+import { globalRegistry } from "../providers/registry.ts";
 
 /**
  * Detects if the request is for the Orchestrator agent
@@ -10,7 +11,16 @@ import { prepareClaudeAuthEnvironment, writeClaudeCredentialsFile } from "../aut
  * @returns true if this is an Orchestrator request
  */
 function isOrchestratorAgent(workingDirectory?: string): boolean {
-  return workingDirectory === "/tmp/orchestrator";
+  // Check if orchestrator is using Anthropic API (indicating it should handle orchestration)
+  const orchestratorAgent = globalRegistry.getAgent("orchestrator");
+  const orchestratorProvider = globalRegistry.getProviderForAgent("orchestrator");
+  
+  // Use orchestrator mode if:
+  // 1. Working directory matches orchestrator working directory, OR
+  // 2. Working directory is /tmp/orchestrator (legacy), AND
+  // 3. The orchestrator agent is configured to use Anthropic provider
+  return (workingDirectory === orchestratorAgent?.workingDirectory || workingDirectory === "/tmp/orchestrator") &&
+         orchestratorProvider?.id === "anthropic";
 }
 
 /**
@@ -191,7 +201,7 @@ async function* executeOrchestratorWorkflow(
     description: string;
     isOrchestrator?: boolean;
   }>,
-  claudeAuth?: ChatRequest['claudeAuth'],
+  _claudeAuth?: ChatRequest['claudeAuth'],
 ): AsyncGenerator<StreamResponse> {
   let abortController: AbortController;
 
@@ -209,15 +219,17 @@ async function* executeOrchestratorWorkflow(
     ];
 
 
-    // Use OAuth access token if provided, otherwise fall back to API key
-    const apiKey = claudeAuth?.accessToken || process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY;
+    // For orchestrator mode, always use the API key from environment variables
+    // OAuth is for individual agent communication, not orchestrator coordination
+    const apiKey = process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY;
     
     if (debugMode) {
-      const authMethod = claudeAuth?.accessToken ? "OAuth" : "API Key";
-      console.debug(`[DEBUG] Orchestrator using ${authMethod} authentication`);
-      if (claudeAuth?.accessToken) {
-        console.debug(`[DEBUG] OAuth user: ${claudeAuth.account?.email_address}`);
-      }
+      console.debug(`[DEBUG] Orchestrator using API Key authentication`);
+      console.debug(`[DEBUG] API Key available:`, !!apiKey);
+    }
+
+    if (!apiKey) {
+      throw new Error("ANTHROPIC_API_KEY environment variable is required for orchestrator mode");
     }
 
     const anthropic = new Anthropic({
