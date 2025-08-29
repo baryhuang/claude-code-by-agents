@@ -6,21 +6,43 @@ import { prepareClaudeAuthEnvironment, writeClaudeCredentialsFile } from "../aut
 import { globalRegistry } from "../providers/registry.ts";
 
 /**
- * Detects if the request is for the Orchestrator agent
- * @param workingDirectory - The working directory path
- * @returns true if this is an Orchestrator request
+ * Detects if orchestrator mode should be used
+ * @param message - The chat message to check for multi-agent mentions
+ * @param availableAgents - Array of available agents
+ * @returns true if orchestrator mode should be used
  */
-function isOrchestratorAgent(workingDirectory?: string): boolean {
-  // Check if orchestrator is using Anthropic API (indicating it should handle orchestration)
-  const orchestratorAgent = globalRegistry.getAgent("orchestrator");
+function shouldUseOrchestrator(message: string, availableAgents?: Array<{id: string; name: string; description: string; isOrchestrator?: boolean}>): boolean {
   const orchestratorProvider = globalRegistry.getProviderForAgent("orchestrator");
   
-  // Use orchestrator mode if:
-  // 1. Working directory matches orchestrator working directory, OR
-  // 2. Working directory is /tmp/orchestrator (legacy), AND
-  // 3. The orchestrator agent is configured to use Anthropic provider
-  return (workingDirectory === orchestratorAgent?.workingDirectory || workingDirectory === "/tmp/orchestrator") &&
-         orchestratorProvider?.id === "anthropic";
+  console.debug(`[DEBUG] shouldUseOrchestrator check:`, {
+    message: message.substring(0, 100),
+    orchestratorProviderId: orchestratorProvider?.id,
+    availableAgentsCount: availableAgents?.length || 0,
+    availableAgents: availableAgents?.map(a => a.id) || []
+  });
+  
+  // Only use orchestrator if it's configured to use Anthropic API
+  if (orchestratorProvider?.id !== "anthropic") {
+    console.debug(`[DEBUG] Orchestrator provider is not 'anthropic', got:`, orchestratorProvider?.id);
+    return false;
+  }
+  
+  // Use orchestrator if there are available agents and:
+  // 1. Multiple agent mentions, OR  
+  // 2. General coordination request without specific agent mentions
+  if (availableAgents && availableAgents.length > 0) {
+    const mentionMatches = message.match(/@(\w+(?:-\w+)*)/g);
+    const result = !mentionMatches || mentionMatches.length > 1;
+    console.debug(`[DEBUG] shouldUseOrchestrator result:`, {
+      mentionMatches,
+      mentionCount: mentionMatches?.length || 0,
+      result
+    });
+    return result;
+  }
+  
+  console.debug(`[DEBUG] No available agents or empty array`);
+  return false;
 }
 
 /**
@@ -310,6 +332,7 @@ Always use orchestrate_execution tool to create step-by-step plans.`;
         }
       ],
       tools,
+      tool_choice: { type: "tool", name: "orchestrate_execution" },
       stream: true,
     });
 
@@ -656,13 +679,13 @@ export async function handleChatRequest(
         // Send a small flush marker to ensure the connection is established
         controller.enqueue(new TextEncoder().encode(" \n"));
 
-        // Check if this is a single-agent mention that should use HTTP request
+        // Check if this should use orchestrator mode
         let executionMethod;
         
-        if (isOrchestratorAgent(chatRequest.workingDirectory) && chatRequest.availableAgents) {
+        if (shouldUseOrchestrator(chatRequest.message, chatRequest.availableAgents)) {
           // Check if message mentions only one specific agent
           const mentionMatches = chatRequest.message.match(/@(\w+(?:-\w+)*)/g);
-          if (mentionMatches && mentionMatches.length === 1) {
+          if (mentionMatches && mentionMatches.length === 1 && chatRequest.availableAgents) {
             const mentionedAgentId = mentionMatches[0].substring(1); // Remove @
             const workerAgents = chatRequest.availableAgents.filter(agent => !agent.isOrchestrator);
             const mentionedAgent = workerAgents.find(agent => agent.id === mentionedAgentId);

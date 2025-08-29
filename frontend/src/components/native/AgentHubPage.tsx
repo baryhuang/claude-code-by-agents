@@ -194,59 +194,72 @@ export function AgentHubPage() {
     console.log("🎯 Current mode:", currentMode);
     console.log("👤 Active agent ID:", activeAgentId);
 
-    // In group mode, check for direct @mentions first, then route to orchestrator
+    // In group mode, check for mentions and route appropriately
     if (isGroupMode) {
-      console.log("🏢 Group mode detected - checking for direct mentions first");
+      console.log("🏢 Group mode detected - checking for mentions");
       
-      // First check if there's a direct @mention - if so, route directly to that agent
-      const mentionMatch = input.match(/^@(\w+(?:-\w+)*)\s+(.*)$/);
-      if (mentionMatch) {
-        const [, agentId, cleanMessage] = mentionMatch;
-        console.log("🎯 Direct mention detected:", { agentId, cleanMessage });
-        const agent = getAgentById(agentId);
-        if (agent) {
-          console.log("✅ Mentioned agent found - routing directly:", {
-            id: agent.id,
-            name: agent.name,
-            endpoint: agent.apiEndpoint
-          });
-          targetAgentId = agent.id;
-          // Keep the full message with @mention for history, but send clean message to agent
-          messageContent = input.trim(); // Preserve @mention in display
-          // Use the specific agent's session, not the group session
-          const agentSession = agentSessions[agent.id];
-          sessionToUse = agentSession?.sessionId || null;
-          console.log("🔄 Using agent-specific session:", sessionToUse);
-          switchToAgent(agent.id);
-        } else {
-          console.log("❌ Mentioned agent not found:", agentId);
-          return; // Exit early if mentioned agent doesn't exist
-        }
+      // Check for multiple mentions first - if multiple, use orchestrator
+      const allMentions = input.match(/@(\w+(?:-\w+)*)/g);
+      if (allMentions && allMentions.length > 1) {
+        console.log("🎯 Multiple mentions detected - routing to orchestrator:", allMentions);
+        targetAgentId = "orchestrator";
+        messageContent = input.trim(); // Preserve all mentions
+        // Use orchestrator session
+        const orchestratorSession = agentSessions["orchestrator"];
+        sessionToUse = orchestratorSession?.sessionId || null;
+        console.log("🔄 Using orchestrator session:", sessionToUse);
+        switchToAgent("orchestrator");
       } else {
-        // No direct mention - route to orchestrator for general orchestration
-        console.log("🏢 No direct mention - looking for orchestrator");
-        const orchestratorAgent = getOrchestratorAgent();
-        if (orchestratorAgent) {
-          console.log("✅ Orchestrator found:", {
-            id: orchestratorAgent.id,
-            name: orchestratorAgent.name,
-            endpoint: orchestratorAgent.apiEndpoint
-          });
-          targetAgentId = orchestratorAgent.id;
-          // Keep the full message for the orchestrator to analyze
-          messageContent = input.trim();
-          // Use orchestrator session for group coordination
-          const groupContext = getAgentRoomContext();
-          sessionToUse = groupContext.sessionId;
-          console.log("🔄 Using orchestrator session:", sessionToUse);
-        } else {
-          console.log("❌ No orchestrator found and no direct mention");
-          targetAgentId = getTargetAgentId();
-          if (targetAgentId) {
-            console.log("✅ Fallback to target agent ID:", targetAgentId);
-            switchToAgent(targetAgentId);
+        // Single mention - route directly to that agent
+        const mentionMatch = input.match(/^@(\w+(?:-\w+)*)\s+(.*)$/);
+        if (mentionMatch) {
+          const [, agentId, cleanMessage] = mentionMatch;
+          console.log("🎯 Single mention detected:", { agentId, cleanMessage });
+          const agent = getAgentById(agentId);
+          if (agent) {
+            console.log("✅ Mentioned agent found - routing directly:", {
+              id: agent.id,
+              name: agent.name,
+              endpoint: agent.apiEndpoint
+            });
+            targetAgentId = agent.id;
+            // Keep the full message with @mention for history, but send clean message to agent
+            messageContent = input.trim(); // Preserve @mention in display
+            // Use the specific agent's session, not the group session
+            const agentSession = agentSessions[agent.id];
+            sessionToUse = agentSession?.sessionId || null;
+            console.log("🔄 Using agent-specific session:", sessionToUse);
+            switchToAgent(agent.id);
           } else {
-            console.log("❌ No target agent ID found");
+            console.log("❌ Mentioned agent not found:", agentId);
+            return; // Exit early if mentioned agent doesn't exist
+          }
+        } else {
+          // No direct mention - route to orchestrator for general orchestration
+          console.log("🏢 No direct mention - looking for orchestrator");
+          const orchestratorAgent = getOrchestratorAgent();
+          if (orchestratorAgent) {
+            console.log("✅ Orchestrator found:", {
+              id: orchestratorAgent.id,
+              name: orchestratorAgent.name,
+              endpoint: orchestratorAgent.apiEndpoint
+            });
+            targetAgentId = orchestratorAgent.id;
+            // Keep the full message for the orchestrator to analyze
+            messageContent = input.trim();
+            // Use orchestrator session for group coordination
+            const groupContext = getAgentRoomContext();
+            sessionToUse = groupContext.sessionId;
+            console.log("🔄 Using orchestrator session:", sessionToUse);
+          } else {
+            console.log("❌ No orchestrator found and no direct mention");
+            targetAgentId = getTargetAgentId();
+            if (targetAgentId) {
+              console.log("✅ Fallback to target agent ID:", targetAgentId);
+              switchToAgent(targetAgentId);
+            } else {
+              console.log("❌ No target agent ID found");
+            }
           }
         }
       }
@@ -309,8 +322,9 @@ export function AgentHubPage() {
         isOrchestrator: currentAgent.isOrchestrator
       });
 
-      // For direct mentions, send clean message to agent but keep full message for display
-      const messageToAgent = messageContent.startsWith('@') ? 
+      // For direct mentions to individual agents, send clean message
+      // For orchestrator, preserve all mentions
+      const messageToAgent = (targetAgentId !== "orchestrator" && messageContent.startsWith('@')) ? 
         messageContent.replace(/^@(\w+(?:-\w+)*)\s+/, '') : 
         messageContent;
 

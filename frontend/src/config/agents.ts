@@ -29,6 +29,14 @@ export const getAgentByName = (name: string): Agent | undefined => {
 };
 
 export const parseAgentMention = (message: string): { agentId: string | null; cleanMessage: string } => {
+  // Check for multiple agent mentions - if found, use orchestrator
+  const allMentions = message.match(/@(\w+(?:-\w+)*)/g);
+  if (allMentions && allMentions.length > 1) {
+    // Multiple mentions - should use orchestrator, don't clean the message
+    return { agentId: "orchestrator", cleanMessage: message };
+  }
+  
+  // Single mention at start - extract and clean
   const mentionMatch = message.match(/^@(\w+(?:-\w+)*)\s+(.*)$/);
   if (mentionMatch) {
     const [, agentId, cleanMessage] = mentionMatch;
