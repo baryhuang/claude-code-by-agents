@@ -497,6 +497,23 @@ async function* executeClaudeCommand(
 
     // Apply auth environment to process.env temporarily
     const originalEnv: Record<string, string | undefined> = {};
+    
+    // Set CLAUDE_CODE_OAUTH_TOKEN if available and clear API key env vars
+    if (claudeAuth?.accessToken) {
+      originalEnv.CLAUDE_CODE_OAUTH_TOKEN = process.env.CLAUDE_CODE_OAUTH_TOKEN;
+      originalEnv.ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+      originalEnv.CLAUDE_API_KEY = process.env.CLAUDE_API_KEY;
+      
+      process.env.CLAUDE_CODE_OAUTH_TOKEN = claudeAuth.accessToken;
+      delete process.env.ANTHROPIC_API_KEY;
+      delete process.env.CLAUDE_API_KEY;
+      
+      if (debugMode) {
+        console.log("[DEBUG] Set CLAUDE_CODE_OAUTH_TOKEN and cleared API key env vars");
+        console.log("[DEBUG] OAuth token length:", claudeAuth.accessToken.length);
+      }
+    }
+    
     for (const [key, value] of Object.entries(authEnv)) {
       originalEnv[key] = process.env[key];
       process.env[key] = value;

@@ -37,7 +37,10 @@
       "target": [
         {
           "target": "dmg",
-          "arch": ["x64", "arm64"]
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         }
       ],
       "hardenedRuntime": true,
@@ -69,11 +72,15 @@
       "target": [
         {
           "target": "portable",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "zip",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "assets/icon.ico"
@@ -85,8 +92,9 @@
     }
   },
   "devDependencies": {
-    "electron": "^32.2.7",
     "electron-builder": "^25.1.8"
   },
-  "dependencies": {}
+  "dependencies": {
+    "electron": "^37.4.0"
+  }
 }

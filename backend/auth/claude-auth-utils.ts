@@ -69,7 +69,7 @@ export async function prepareClaudeAuthEnvironment(): Promise<{
     // Set the credentials path for the preload script to read from
     CLAUDE_CREDENTIALS_PATH: credentialsPath,
     // Enable debug logging for the preload script if needed
-    DEBUG_PRELOAD_SCRIPT: process.env.DEBUG_PRELOAD_SCRIPT || "0",
+    DEBUG_PRELOAD_SCRIPT: "1",
   };
 
   // Add NODE_OPTIONS to include the preload script
