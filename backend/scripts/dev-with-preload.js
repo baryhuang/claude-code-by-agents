@@ -28,7 +28,8 @@ console.log('🐛 Debug logging: enabled');
 console.log('');
 
 // Start the development server with dotenvx and tsx
-const child = spawn('dotenvx', [
+const child = spawn('npx', [
+  'dotenvx',
   'run',
   '--env-file=../.env',
   '--',
