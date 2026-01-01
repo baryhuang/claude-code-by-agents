@@ -15,6 +15,16 @@ jobs:
       - uses: actions/checkout@v4
         with:
           token: ${{ secrets.GH_PAT }}
+      
       - uses: Songmu/tagpr@v1
+        id: tagpr
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+      
+      # Auto-merge the tagpr PR to trigger automatic releases
+      - name: Auto-merge tagpr PR
+        if: steps.tagpr.outputs.pull_request_number != ''
+        run: |
+          gh pr merge ${{ steps.tagpr.outputs.pull_request_number }} --auto --squash
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
