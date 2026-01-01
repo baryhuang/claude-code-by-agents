@@ -86,7 +86,15 @@
       "icon": "assets/icon.ico"
     },
     "linux": {
-      "target": "AppImage",
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
       "icon": "assets/icon.png",
       "category": "Development"
     }

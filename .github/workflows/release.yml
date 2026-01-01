@@ -3,26 +3,65 @@ name: Release
 on:
   push:
     tags:
-      - "*"
+      - "v*"
 
 jobs:
+  # Verify the tag is on main branch before building
+  verify-branch:
+    runs-on: ubuntu-latest
+    outputs:
+      is_main: ${{ steps.check.outputs.is_main }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if tag is on main branch
+        id: check
+        run: |
+          # Get the commit SHA that the tag points to
+          TAG_COMMIT=$(git rev-list -n 1 ${{ github.ref_name }})
+          # Check if this commit is on main branch
+          if git branch -r --contains $TAG_COMMIT | grep -q 'origin/main'; then
+            echo "Tag ${{ github.ref_name }} is on main branch"
+            echo "is_main=true" >> $GITHUB_OUTPUT
+          else
+            echo "Tag ${{ github.ref_name }} is NOT on main branch - skipping release"
+            echo "is_main=false" >> $GITHUB_OUTPUT
+          fi
+
   build:
+    needs: verify-branch
+    if: needs.verify-branch.outputs.is_main == 'true'
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
+          # Linux x64
           - os: ubuntu-latest
             platform: linux
             arch: x64
-            artifact_pattern: "*.AppImage"
+            electron_args: "--linux --x64"
+            artifact_pattern: "*x86_64*.AppImage"
+          # Linux ARM64
+          - os: ubuntu-latest
+            platform: linux
+            arch: arm64
+            electron_args: "--linux --arm64"
+            artifact_pattern: "*arm64*.AppImage"
+          # macOS (universal - both Intel and Apple Silicon)
           - os: macos-latest
             platform: mac
             arch: universal
+            electron_args: "--mac"
             artifact_pattern: "*.dmg"
+          # Windows x64
           - os: windows-latest
             platform: win
             arch: x64
-            artifact_pattern: "Agentrooms Setup *.exe"
+            electron_args: "--win --x64"
+            artifact_pattern: "Agentrooms*"
 
     steps:
       - name: Checkout code
@@ -56,7 +95,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y python3-setuptools
-      
+
       - name: Setup Python (macOS)
         if: matrix.os == 'macos-latest'
         uses: actions/setup-python@v4
@@ -64,10 +103,14 @@ jobs:
           python-version: '3.11'
 
       - name: Build Electron app
-        run: npm run dist:${{ matrix.platform }}
+        run: npx electron-builder ${{ matrix.electron_args }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: List dist directory
+        run: ls -la dist/
+        shell: bash
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -76,7 +119,8 @@ jobs:
           path: dist/${{ matrix.artifact_pattern }}
 
   release:
-    needs: build
+    needs: [verify-branch, build]
+    if: needs.verify-branch.outputs.is_main == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -135,7 +179,8 @@ jobs:
           prerelease: false
 
   npm-publish:
-    needs: build
+    needs: [verify-branch, build]
+    if: needs.verify-branch.outputs.is_main == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
