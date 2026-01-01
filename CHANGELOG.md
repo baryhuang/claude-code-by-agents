@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.42](https://github.com/baryhuang/claude-code-by-agents/compare/0.1.41...0.1.42) - 2026-01-01
+- fix backend bug by @Xinxin-Ma in https://github.com/baryhuang/claude-code-by-agents/pull/39
+- Fix TypeScript error: ensure boolean return type in shouldUseOrchestrator by @baryhuang in https://github.com/baryhuang/claude-code-by-agents/pull/40
+- Add Linux ARM64 build support to release workflow by @baryhuang in https://github.com/baryhuang/claude-code-by-agents/pull/41
+
 ## [0.1.41](https://github.com/baryhuang/claude-code-by-agents/compare/0.1.40...0.1.41) - 2025-08-29
 - feat: implement multi-agent chat room protocol with OpenAI + Claude Code coordination by @baryhuang in https://github.com/baryhuang/claude-code-by-agents/pull/22
 - feat: Add comprehensive Swagger API documentation by @baryhuang in https://github.com/baryhuang/claude-code-by-agents/pull/32
