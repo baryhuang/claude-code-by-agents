@@ -8,7 +8,7 @@
 	changelog = true
 
 	# Use "v" prefix for tags (v1.0.0, v1.0.1, etc.)
-	vPrefix = false
+	vPrefix = true
 
 	# Create GitHub Releases automatically
 	release = true
