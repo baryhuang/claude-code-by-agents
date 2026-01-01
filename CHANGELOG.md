@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.1.42](https://github.com/baryhuang/claude-code-by-agents/compare/0.1.42...v0.1.42) - 2026-01-01
+- Fix tagpr to use v prefix for tags by @baryhuang in https://github.com/baryhuang/claude-code-by-agents/pull/43
+- Fix release workflow to trigger on both v* and semver tags by @baryhuang in https://github.com/baryhuang/claude-code-by-agents/pull/45
+- Enable fully automatic releases on every main merge by @baryhuang in https://github.com/baryhuang/claude-code-by-agents/pull/46
+
 ## [0.1.42](https://github.com/baryhuang/claude-code-by-agents/compare/0.1.41...0.1.42) - 2026-01-01
 - fix backend bug by @Xinxin-Ma in https://github.com/baryhuang/claude-code-by-agents/pull/39
 - Fix TypeScript error: ensure boolean return type in shouldUseOrchestrator by @baryhuang in https://github.com/baryhuang/claude-code-by-agents/pull/40
