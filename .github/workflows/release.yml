@@ -74,6 +74,15 @@ jobs:
           node-version: "22"
           cache: "npm"
 
+      - name: Update version from tag
+        run: |
+          # Extract version from tag (remove 'v' prefix if present)
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#v}"
+          echo "Setting version to: $VERSION"
+          # Update package.json version
+          npm version $VERSION --no-git-tag-version --allow-same-version
+
       - name: Install dependencies
         run: npm install
 
