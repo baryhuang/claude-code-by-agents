@@ -11,18 +11,30 @@ jobs:
     strategy:
       matrix:
         include:
+          # Linux x64
           - os: ubuntu-latest
             platform: linux
             arch: x64
-            artifact_pattern: "*.AppImage"
+            electron_args: "--linux --x64"
+            artifact_pattern: "*x86_64*.AppImage"
+          # Linux ARM64
+          - os: ubuntu-latest
+            platform: linux
+            arch: arm64
+            electron_args: "--linux --arm64"
+            artifact_pattern: "*arm64*.AppImage"
+          # macOS (universal - both Intel and Apple Silicon)
           - os: macos-latest
             platform: mac
             arch: universal
+            electron_args: "--mac"
             artifact_pattern: "*.dmg"
+          # Windows x64
           - os: windows-latest
             platform: win
             arch: x64
-            artifact_pattern: "Agentrooms Setup *.exe"
+            electron_args: "--win --x64"
+            artifact_pattern: "Agentrooms*"
 
     steps:
       - name: Checkout code
@@ -56,7 +68,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y python3-setuptools
-      
+
       - name: Setup Python (macOS)
         if: matrix.os == 'macos-latest'
         uses: actions/setup-python@v4
@@ -64,10 +76,14 @@ jobs:
           python-version: '3.11'
 
       - name: Build Electron app
-        run: npm run dist:${{ matrix.platform }}
+        run: npx electron-builder ${{ matrix.electron_args }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: List dist directory
+        run: ls -la dist/
+        shell: bash
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
