@@ -75,6 +75,7 @@ jobs:
           cache: "npm"
 
       - name: Update version from tag
+        shell: bash
         run: |
           # Extract version from tag (remove 'v' prefix if present)
           VERSION="${{ github.ref_name }}"
