@@ -97,6 +97,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y python3-setuptools
 
+      - name: Install ARM64 cross-compilation tools (Linux ARM64 only)
+        if: matrix.os == 'ubuntu-latest' && matrix.arch == 'arm64'
+        run: |
+          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+
       - name: Setup Python (macOS)
         if: matrix.os == 'macos-latest'
         uses: actions/setup-python@v4
@@ -108,6 +113,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
+          # For ARM64 cross-compilation on x64 runner
+          npm_config_arch: ${{ matrix.arch }}
+          npm_config_target_arch: ${{ matrix.arch }}
 
       - name: List dist directory
         run: ls -la dist/
