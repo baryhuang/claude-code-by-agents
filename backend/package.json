@@ -1,6 +1,6 @@
 {
   "name": "agentrooms",
-  "version": "0.1.43",
+  "version": "0.1.44",
   "type": "module",
   "description": "Agentrooms - Multi-agent workspace for collaborative development",
   "keywords": [
