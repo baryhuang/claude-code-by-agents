@@ -316,7 +316,7 @@ export function ChatInput({
           onKeyDown={handleKeyDown}
           placeholder={
             currentMode === "group" 
-              ? "Chat with agents or @mention specific agent..."
+              ? "Message agents or @mention a specific one..."
               : activeAgentId 
                 ? `Assign task to ${getAgentById(activeAgentId)?.name}...`
                 : "Select an agent to start coding..."
