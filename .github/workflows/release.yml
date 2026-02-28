@@ -62,7 +62,7 @@ jobs:
             platform: win
             arch: x64
             electron_args: "--win --x64"
-            artifact_pattern: "Agentrooms*"
+            artifact_pattern: "Claude Ops-Deck*"
 
     steps:
       - name: Checkout code
@@ -134,7 +134,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: agentrooms-${{ matrix.platform }}-${{ matrix.arch }}
+          name: claude-ops-deck-${{ matrix.platform }}-${{ matrix.arch }}
           path: dist/${{ matrix.artifact_pattern }}
 
   release:

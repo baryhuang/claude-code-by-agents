@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Windows Build Script for Agentrooms
+# Windows Build Script for Claude Ops-Deck
 # This script handles the Wine dependency for cross-platform Windows builds on Linux
 
-echo "=== Agentrooms Windows Build Script ==="
+echo "=== Claude Ops-Deck Windows Build Script ==="
 echo ""
 
 # Check if Wine is installed
