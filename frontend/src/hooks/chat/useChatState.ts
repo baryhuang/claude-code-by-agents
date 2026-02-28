@@ -71,7 +71,7 @@ export function useChatState() {
     if (activeAgentId) return activeAgentId;
     if (lastUsedAgentId) return lastUsedAgentId;
     // Fallback to first available agent
-    return "readymojo-admin"; // Default to admin agent
+    return "project-admin"; // Default to admin agent
   }, [activeAgentId, lastUsedAgentId]);
 
   // Add message - supports both orchestrator and individual agent modes

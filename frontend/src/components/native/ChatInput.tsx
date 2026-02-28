@@ -17,9 +17,9 @@ interface ChatInputProps {
 const getAgentColor = (agentId: string) => {
   // Map agent IDs to CSS color variables, with fallback
   const colorMap: Record<string, string> = {
-    "readymojo-admin": "var(--agent-admin)",
-    "readymojo-api": "var(--agent-api)", 
-    "readymojo-web": "var(--agent-web)",
+    "project-admin": "var(--agent-admin)",
+    "project-api": "var(--agent-api)",
+    "project-web": "var(--agent-web)",
     "peakmojo-kit": "var(--agent-kit)",
   };
   return colorMap[agentId] || "var(--claude-text-accent)";
