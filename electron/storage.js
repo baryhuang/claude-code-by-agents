@@ -5,7 +5,7 @@ const { app } = require('electron');
 class ElectronStorage {
   constructor() {
     this.userDataPath = app.getPath('userData');
-    this.storagePath = path.join(this.userDataPath, 'agentrooms-data');
+    this.storagePath = path.join(this.userDataPath, 'claude-ops-deck-data');
     
     // Ensure storage directory exists
     if (!fs.existsSync(this.storagePath)) {
