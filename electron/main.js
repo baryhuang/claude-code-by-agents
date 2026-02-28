@@ -147,7 +147,7 @@ function createWindow() {
         <!DOCTYPE html>
         <html>
         <head>
-          <title>Agentrooms - Loading Error</title>
+          <title>Claude Ops-Deck - Loading Error</title>
           <style>
             body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
                    padding: 20px; background: #1a1d1a; color: white; }
@@ -280,15 +280,15 @@ app.on('before-quit', () => {
 if (process.platform === 'darwin') {
   const template = [
     {
-      label: 'Agentrooms',
+      label: 'Claude Ops-Deck',
       submenu: [
         {
-          label: 'About Agentrooms',
+          label: 'About Claude Ops-Deck',
           role: 'about'
         },
         { type: 'separator' },
         {
-          label: 'Hide Agentrooms',
+          label: 'Hide Claude Ops-Deck',
           accelerator: 'Command+H',
           role: 'hide'
         },
