@@ -1,4 +1,4 @@
-# Agentrooms - Multi-Agent Development Workspace
+# Claude Ops-Deck by Axiom-Labs - AI Agent Mission Control
 
 ## Product Vision
 

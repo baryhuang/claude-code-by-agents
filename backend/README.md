@@ -1,6 +1,6 @@
-# Claude Code Agentrooms UI + Remote Claude Code API
+# Claude Ops-Deck by Axiom-Labs
 
-Multi-agent workspace for collaborative development with Claude CLI. Route tasks to specialized agents (local or remote), coordinate complex workflows.
+AI Agent Mission Control for collaborative development with Claude CLI. Route tasks to specialized agents (local or remote), coordinate complex workflows.
 
 > **Current Status**: This version supports one agent room. Multiple rooms support is planned for future releases - contributions welcome!
 
@@ -80,7 +80,7 @@ cd backend && deno task dev
 ```
 
 **Configure Frontend to Connect:**
-- Open the Agentrooms app (Windows: run .exe installer, macOS: drag to Applications, Linux: make executable and run)
+- Open the Claude Ops-Deck app (Windows: run .exe installer, macOS: drag to Applications, Linux: make executable and run)
 - Frontend will automatically connect to `localhost:8080`
 - If backend is on different port, update frontend config
 
