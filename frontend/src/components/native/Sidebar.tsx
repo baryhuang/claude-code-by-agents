@@ -1,6 +1,7 @@
 import { MessageCircle, Users, Settings } from "lucide-react";
 import { useState } from "react";
 import { useAgentConfig } from "../../hooks/useAgentConfig";
+import { AgentAvatar } from "../shared/AgentAvatar";
 import { SettingsModal } from "../SettingsModal";
 import { AuthButton } from "../auth/AuthButton";
 
@@ -12,17 +13,6 @@ interface SidebarProps {
   currentMode: "group" | "agent";
   onModeChange: (mode: "group" | "agent") => void;
 }
-
-const getAgentColor = (agentId: string) => {
-  // Map agent IDs to CSS color variables, with fallback
-  const colorMap: Record<string, string> = {
-    "readymojo-admin": "var(--agent-admin)",
-    "readymojo-api": "var(--agent-api)", 
-    "readymojo-web": "var(--agent-web)",
-    "peakmojo-kit": "var(--agent-kit)",
-  };
-  return colorMap[agentId] || "var(--claude-text-accent)";
-};
 
 export function Sidebar({ 
   activeAgentId, 
@@ -45,8 +35,8 @@ export function Sidebar({
             <MessageCircle size={14} />
           </div>
           <div className="sidebar-brand-text">
-            <h1>Agentrooms</h1>
-            <p>Multi-Agent Workspace</p>
+            <h1>Claude Ops-Deck</h1>
+            <p>AI Agent Mission Control</p>
           </div>
         </div>
 
@@ -85,10 +75,7 @@ export function Sidebar({
               className={`sidebar-agent-item ${isActive ? "active" : ""}`}
             >
               {/* Agent Indicator */}
-              <div 
-                className="sidebar-agent-dot"
-                style={{ backgroundColor: getAgentColor(agent.id) }}
-              />
+              <AgentAvatar size="sm" agent={agent} />
               
               {/* Agent Info */}
               <div className="sidebar-agent-info">

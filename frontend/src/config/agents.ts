@@ -1,11 +1,7 @@
-export interface Agent {
-  id: string;
-  name: string;
-  workingDirectory: string;
-  color: string;
-  description: string;
-  isOrchestrator?: boolean; // Indicates if this agent orchestrates others
-}
+// Re-export Agent type from the canonical source
+export type { Agent, AgentAvatar, AgentAvatarType, AgentRole } from "../hooks/useAgentConfig";
+
+import type { Agent } from "../hooks/useAgentConfig";
 
 export const PREDEFINED_AGENTS: Agent[] = [
   {
@@ -14,6 +10,7 @@ export const PREDEFINED_AGENTS: Agent[] = [
     workingDirectory: "/tmp/orchestrator",
     color: "bg-gradient-to-r from-blue-500 to-purple-500",
     description: "Intelligent orchestrator that coordinates multi-agent workflows",
+    apiEndpoint: "http://localhost:8080",
     isOrchestrator: true
   }
 ];

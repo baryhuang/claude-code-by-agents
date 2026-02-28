@@ -17,6 +17,7 @@ import { PermissionDialog } from "../PermissionDialog";
 import { getChatUrl } from "../../config/api";
 import type { StreamingContext } from "../../hooks/streaming/useMessageProcessor";
 import { debugStreamingConnection, debugStreamingChunk, debugStreamingPerformance, warnProxyBuffering } from "../../utils/streamingDebug";
+import { AgentAvatar } from "../shared/AgentAvatar";
 
 interface AgentDetailViewProps {
   agentId: string;
@@ -45,28 +46,6 @@ interface AgentDetailViewProps {
   getOrCreateAgentSession: (agentId: string) => any;
   loadHistoricalMessages: (messages: any[], sessionId: string, agentId?: string, useAgentRoom?: boolean) => void;
 }
-
-const getAgentColor = (agentId: string) => {
-  // Generate consistent colors based on agent ID
-  const colors = [
-    "#3b82f6", // blue
-    "#ef4444", // red  
-    "#10b981", // green
-    "#f59e0b", // yellow
-    "#8b5cf6", // purple
-    "#ec4899", // pink
-    "#06b6d4", // cyan
-    "#84cc16", // lime
-  ];
-  
-  // Create a simple hash from the agent ID
-  let hash = 0;
-  for (let i = 0; i < agentId.length; i++) {
-    hash = agentId.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  
-  return colors[Math.abs(hash) % colors.length];
-};
 
 export function AgentDetailView({ 
   agentId,
@@ -323,6 +302,8 @@ export function AgentDetailView({
         sessionId: agentSessionId || undefined,
         requestId,
         workingDirectory: agent.workingDirectory,
+        systemPrompt: agent.systemPrompt,
+        allowedTools: agent.allowedTools?.length ? agent.allowedTools : undefined,
         claudeAuth: claudeSession ? {
           accessToken: claudeSession.accessToken,
           refreshToken: claudeSession.refreshToken,
@@ -337,7 +318,9 @@ export function AgentDetailView({
           description: agent.description,
           workingDirectory: agent.workingDirectory,
           apiEndpoint: agent.apiEndpoint,
-          isOrchestrator: agent.isOrchestrator
+          isOrchestrator: agent.isOrchestrator,
+          systemPrompt: agent.systemPrompt,
+          role: agent.role,
         })),
       };
 
@@ -486,6 +469,8 @@ export function AgentDetailView({
         sessionId: agentSessionId || undefined,
         requestId,
         workingDirectory: targetAgent.workingDirectory,
+        systemPrompt: targetAgent.systemPrompt,
+        allowedTools: targetAgent.allowedTools?.length ? targetAgent.allowedTools : undefined,
         claudeAuth: claudeSession ? {
           accessToken: claudeSession.accessToken,
           refreshToken: claudeSession.refreshToken,
@@ -500,7 +485,9 @@ export function AgentDetailView({
           description: agent.description,
           workingDirectory: agent.workingDirectory,
           apiEndpoint: agent.apiEndpoint,
-          isOrchestrator: agent.isOrchestrator
+          isOrchestrator: agent.isOrchestrator,
+          systemPrompt: agent.systemPrompt,
+          role: agent.role,
         })),
       };
 
@@ -679,8 +666,6 @@ export function AgentDetailView({
   const isActive = agentSessionId !== null;
   const status = isActive ? "Active" : "Idle";
 
-  const agentColor = getAgentColor(agent.id);
-
   const copyPath = () => {
     navigator.clipboard.writeText(agent.workingDirectory);
   };
@@ -690,12 +675,7 @@ export function AgentDetailView({
       <div className="agent-detail-content" style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
         {/* Agent Header with Configuration */}
         <div className="agent-detail-header" style={{ flexShrink: 0 }}>
-          <div 
-            className="agent-detail-icon"
-            style={{ backgroundColor: agentColor }}
-          >
-            {agent.name.charAt(0).toUpperCase()}
-          </div>
+          <AgentAvatar size="lg" agent={agent} showBadge />
           <div className="agent-detail-info" style={{ flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>

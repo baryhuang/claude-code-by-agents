@@ -25,7 +25,7 @@ struct Agent: Codable, Identifiable, Hashable {
             name: "Orchestrator Agent",
             description: "Orchestrates multi-agent conversations",
             workingDirectory: "/tmp/orchestrator",
-            apiEndpoint: "https://api.claudecode.run",
+            apiEndpoint: "http://localhost:8080",
             isOrchestrator: true
         )
     ]

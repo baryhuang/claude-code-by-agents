@@ -25,6 +25,7 @@ export interface ProviderChatRequest {
   sessionId?: string;
   requestId: string;
   workingDirectory?: string;
+  systemPrompt?: string;
   images?: ProviderImage[];
   context?: ProviderContext[];
 }

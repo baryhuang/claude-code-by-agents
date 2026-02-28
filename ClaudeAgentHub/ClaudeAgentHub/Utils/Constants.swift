@@ -97,7 +97,7 @@ struct Constants {
     struct Network {
         static let defaultTimeout: TimeInterval = 30
         static let streamingTimeout: TimeInterval = 300
-        static let defaultAPIBaseURL = "https://api.claudecode.run"
+        static let defaultAPIBaseURL = "http://localhost:8080"
     }
     
     // MARK: - Haptic Feedback

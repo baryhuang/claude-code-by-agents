@@ -10,6 +10,7 @@ export interface ChatRequest {
   requestId: string;
   allowedTools?: string[];
   workingDirectory?: string;
+  systemPrompt?: string;
   claudeAuth?: {
     accessToken: string;
     refreshToken: string;
@@ -28,6 +29,8 @@ export interface ChatRequest {
     workingDirectory: string;
     apiEndpoint: string;
     isOrchestrator?: boolean;
+    systemPrompt?: string;
+    role?: string;
   }>;
 }
 

@@ -82,7 +82,7 @@ export class AnthropicProvider implements AgentProvider {
         temperature,
         max_tokens: maxTokens,
         stream: true,
-        system: "You are Claude, a helpful AI assistant created by Anthropic. You help users coordinate multiple AI agents working on different parts of projects, each with specialized skills and access to different codebases. When working in orchestrator mode, you help plan and coordinate tasks across multiple agents."
+        system: "You are Claude, a helpful AI assistant created by Anthropic. You help users coordinate multiple AI agents working on different parts of projects, each with specialized skills and access to different codebases. When working in orchestrator mode, you help plan and coordinate tasks across multiple agents." + (request.systemPrompt ? `\n\nAdditional instructions: ${request.systemPrompt}` : "")
       };
       
       const response = await fetch(this.baseUrl, {

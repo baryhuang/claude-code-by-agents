@@ -1,22 +1,12 @@
 import { User, Bot } from "lucide-react";
 import type { ChatMessage } from "../../types";
 import { useAgentConfig } from "../../hooks/useAgentConfig";
+import { AgentAvatar } from "../shared/AgentAvatar";
 
 interface MessageBubbleProps {
   message: ChatMessage;
   isLast?: boolean;
 }
-
-const getAgentColor = (agentId: string) => {
-  // Map agent IDs to CSS color variables, with fallback
-  const colorMap: Record<string, string> = {
-    "readymojo-admin": "var(--agent-admin)",
-    "readymojo-api": "var(--agent-api)", 
-    "readymojo-web": "var(--agent-web)",
-    "peakmojo-kit": "var(--agent-kit)",
-  };
-  return colorMap[agentId] || "var(--claude-text-accent)";
-};
 
 export function MessageBubble({ message, isLast = false }: MessageBubbleProps) {
   const isUser = message.role === "user";
@@ -34,14 +24,13 @@ export function MessageBubble({ message, isLast = false }: MessageBubbleProps) {
   return (
     <div className={`message-item animate-in ${isLast ? 'last' : ''}`}>
       {/* Avatar */}
-      <div 
-        className={`message-avatar ${isUser ? 'user' : ''}`}
-        style={!isUser && agent ? { 
-          backgroundColor: getAgentColor(agent.id)
-        } : {}}
-      >
-        {isUser ? <User size={14} /> : <Bot size={14} />}
-      </div>
+      {!isUser && agent ? (
+        <AgentAvatar size="md" agent={agent} />
+      ) : (
+        <div className={`message-avatar ${isUser ? 'user' : ''}`}>
+          {isUser ? <User size={14} /> : <Bot size={14} />}
+        </div>
+      )}
 
       {/* Message Content */}
       <div className="message-content">

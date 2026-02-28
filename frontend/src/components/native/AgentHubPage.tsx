@@ -19,9 +19,14 @@ import { useRemoteAgentHistory } from "../../hooks/useRemoteAgentHistory";
 import { useClaudeAuth } from "../../hooks/useClaudeAuth";
 import type { StreamingContext } from "../../hooks/streaming/useMessageProcessor";
 import { debugStreamingConnection, debugStreamingChunk, debugStreamingPerformance, warnProxyBuffering } from "../../utils/streamingDebug";
+import { useAgentInteractions } from "../../hooks/useAgentInteractions";
+import { AgentNetworkMap } from "../visualization/AgentNetworkMap";
+import "../../components/visualization/visualization.css";
 
 export function AgentHubPage() {
   const [currentMode, setCurrentMode] = useState<"group" | "agent">("group");
+  const [hubView, setHubView] = useState<"chat" | "map">("chat");
+  const { trackInteraction, getGraph } = useAgentInteractions();
   
   useTheme(); // For theme switching support
   const { processStreamLine } = useClaudeStreaming();
@@ -343,6 +348,8 @@ export function AgentHubPage() {
         sessionId: sessionToUse || undefined,
         requestId,
         workingDirectory: currentAgent.workingDirectory,
+        systemPrompt: currentAgent.systemPrompt,
+        allowedTools: currentAgent.allowedTools?.length ? currentAgent.allowedTools : undefined,
         claudeAuth: claudeSession ? {
           accessToken: claudeSession.accessToken,
           refreshToken: claudeSession.refreshToken,
@@ -357,7 +364,9 @@ export function AgentHubPage() {
           description: agent.description,
           workingDirectory: agent.workingDirectory,
           apiEndpoint: agent.apiEndpoint,
-          isOrchestrator: agent.isOrchestrator
+          isOrchestrator: agent.isOrchestrator,
+          systemPrompt: agent.systemPrompt,
+          role: agent.role,
         })),
       };
 
@@ -528,6 +537,8 @@ export function AgentHubPage() {
         sessionId: stepSessionId,
         requestId,
         workingDirectory: targetAgent.workingDirectory,
+        systemPrompt: targetAgent.systemPrompt,
+        allowedTools: targetAgent.allowedTools?.length ? targetAgent.allowedTools : undefined,
         claudeAuth: claudeSession ? {
           accessToken: claudeSession.accessToken,
           refreshToken: claudeSession.refreshToken,
@@ -542,7 +553,9 @@ export function AgentHubPage() {
           description: agent.description,
           workingDirectory: agent.workingDirectory,
           apiEndpoint: agent.apiEndpoint,
-          isOrchestrator: agent.isOrchestrator
+          isOrchestrator: agent.isOrchestrator,
+          systemPrompt: agent.systemPrompt,
+          role: agent.role,
         })),
       };
 
@@ -763,29 +776,78 @@ export function AgentHubPage() {
         ) : (
           /* Chat Interface */
           <>
-            {/* Messages Area */}
-            <div className="messages-container">
-              <ChatMessages 
-                messages={currentMode === "group" ? getAgentRoomContext().messages : messages} 
-                isLoading={isLoading} 
-                onExecuteStep={handleExecuteStep}
-                onExecutePlan={handleExecutePlan}
-                currentAgentId={activeAgentId || undefined}
-              />
+            {/* View Toggle */}
+            <div style={{
+              display: "flex",
+              gap: "2px",
+              padding: "4px",
+              margin: "0 12px",
+              background: "var(--claude-input-bg)",
+              borderRadius: "6px",
+              border: "1px solid var(--claude-border)",
+              width: "fit-content",
+            }}>
+              {(["chat", "map"] as const).map((view) => (
+                <button
+                  key={view}
+                  onClick={() => setHubView(view)}
+                  style={{
+                    padding: "4px 12px",
+                    borderRadius: "4px",
+                    fontSize: "11px",
+                    fontWeight: 600,
+                    textTransform: "capitalize",
+                    color: hubView === view ? "var(--claude-text-primary)" : "var(--claude-text-muted)",
+                    background: hubView === view ? "var(--claude-sidebar-hover)" : "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  {view}
+                </button>
+              ))}
             </div>
 
-            {/* Chat Input */}
-            <ChatInput
-              input={input}
-              isLoading={isLoading}
-              currentRequestId={currentRequestId}
-              activeAgentId={activeAgentId}
-              currentMode={currentMode}
-              lastUsedAgentId={lastUsedAgentId}
-              onInputChange={setInput}
-              onSubmit={handleSendMessage}
-              onAbort={handleAbort}
-            />
+            {hubView === "map" ? (
+              /* Agent Network Map */
+              <div className="messages-container" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <AgentNetworkMap
+                  agents={agents}
+                  graph={getGraph(agents)}
+                  onAgentClick={(agentId) => {
+                    switchToAgent(agentId);
+                    setCurrentMode("agent");
+                  }}
+                />
+              </div>
+            ) : (
+              <>
+                {/* Messages Area */}
+                <div className="messages-container">
+                  <ChatMessages
+                    messages={currentMode === "group" ? getAgentRoomContext().messages : messages}
+                    isLoading={isLoading}
+                    onExecuteStep={handleExecuteStep}
+                    onExecutePlan={handleExecutePlan}
+                    currentAgentId={activeAgentId || undefined}
+                  />
+                </div>
+
+                {/* Chat Input */}
+                <ChatInput
+                  input={input}
+                  isLoading={isLoading}
+                  currentRequestId={currentRequestId}
+                  activeAgentId={activeAgentId}
+                  currentMode={currentMode}
+                  lastUsedAgentId={lastUsedAgentId}
+                  onInputChange={setInput}
+                  onSubmit={handleSendMessage}
+                  onAbort={handleAbort}
+                />
+              </>
+            )}
           </>
         )}
       </div>

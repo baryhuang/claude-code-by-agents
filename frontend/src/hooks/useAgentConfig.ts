@@ -1,5 +1,14 @@
 import { useState, useEffect } from "react";
 
+export type AgentAvatarType = 'letter' | 'emoji' | 'lucide-icon';
+
+export interface AgentAvatar {
+  type: AgentAvatarType;
+  value: string;
+}
+
+export type AgentRole = 'architect' | 'sprinter' | 'reviewer' | 'mentor' | 'guardian' | 'custom';
+
 export interface Agent {
   id: string;
   name: string;
@@ -8,6 +17,10 @@ export interface Agent {
   description: string;
   apiEndpoint: string;
   isOrchestrator?: boolean;
+  avatar?: AgentAvatar;
+  systemPrompt?: string;
+  allowedTools?: string[];
+  role?: AgentRole;
 }
 
 export interface AgentSystemConfig {
@@ -21,7 +34,7 @@ const DEFAULT_AGENTS: Agent[] = [
     workingDirectory: "/tmp/orchestrator",
     color: "bg-gradient-to-r from-blue-500 to-purple-500",
     description: "Intelligent orchestrator that coordinates multi-agent workflows",
-    apiEndpoint: "https://api.claudecode.run",
+    apiEndpoint: "http://localhost:8080",
     isOrchestrator: true
   }
 ];
@@ -74,16 +87,32 @@ export function useAgentConfig() {
         // Simply use the saved config, merging with any new default agents
         const existingAgentIds = new Set(parsedConfig.agents?.map((a: Agent) => a.id) || []);
         const newDefaultAgents = DEFAULT_CONFIG.agents.filter(agent => !existingAgentIds.has(agent.id));
-        
+
+        // Migrate existing agents: backfill new optional fields with defaults
+        let needsMigration = false;
+        const migratedAgents = (parsedConfig.agents || []).map((agent: Agent) => {
+          const migrated = { ...agent };
+          if (!migrated.avatar) {
+            migrated.avatar = { type: 'letter' as AgentAvatarType, value: migrated.name.charAt(0).toUpperCase() };
+            needsMigration = true;
+          }
+          if (migrated.role === undefined) {
+            migrated.role = migrated.isOrchestrator ? 'architect' as AgentRole : 'custom' as AgentRole;
+            needsMigration = true;
+          }
+          // systemPrompt and allowedTools default to undefined (no backfill needed)
+          return migrated;
+        });
+
         const mergedConfig = {
-          agents: [...(parsedConfig.agents || []), ...newDefaultAgents]
+          agents: [...migratedAgents, ...newDefaultAgents]
         };
         console.log("🔀 Merged config:", mergedConfig);
         setConfig(mergedConfig);
-        
-        // Save the merged config if new agents were added
-        if (newDefaultAgents.length > 0) {
-          console.log("💾 Saving merged config with new agents:", newDefaultAgents);
+
+        // Save the merged config if new agents were added or migration occurred
+        if (newDefaultAgents.length > 0 || needsMigration) {
+          console.log("💾 Saving merged config with new agents/migration:", { newDefaultAgents: newDefaultAgents.length, needsMigration });
           localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedConfig));
         }
       } else {

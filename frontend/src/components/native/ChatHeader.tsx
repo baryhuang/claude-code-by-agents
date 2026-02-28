@@ -1,23 +1,13 @@
-import { Users, User, MoreHorizontal, Download, Trash2 } from "lucide-react";
+import { Users, MoreHorizontal, Download, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useAgentConfig } from "../../hooks/useAgentConfig";
+import { AgentAvatar } from "../shared/AgentAvatar";
 
 interface ChatHeaderProps {
   currentMode: "group" | "agent";
   activeAgentId: string | null;
   onModeToggle: () => void;
 }
-
-const getAgentColor = (agentId: string) => {
-  // Map agent IDs to CSS color variables, with fallback
-  const colorMap: Record<string, string> = {
-    "readymojo-admin": "var(--agent-admin)",
-    "readymojo-api": "var(--agent-api)", 
-    "readymojo-web": "var(--agent-web)",
-    "peakmojo-kit": "var(--agent-kit)",
-  };
-  return colorMap[agentId] || "var(--claude-text-accent)";
-};
 
 export function ChatHeader({ currentMode, activeAgentId }: ChatHeaderProps) {
   const [showMenu, setShowMenu] = useState(false);
@@ -42,12 +32,16 @@ export function ChatHeader({ currentMode, activeAgentId }: ChatHeaderProps) {
           </>
         ) : (
           <>
-            <div 
-              className="chat-header-icon"
-              style={{ backgroundColor: currentAgent ? getAgentColor(currentAgent.id) : "var(--claude-border)" }}
-            >
-              <User size={12} />
-            </div>
+            {currentAgent ? (
+              <AgentAvatar size="md" agent={currentAgent} />
+            ) : (
+              <div
+                className="chat-header-icon"
+                style={{ backgroundColor: "var(--claude-border)" }}
+              >
+                <Users size={12} />
+              </div>
+            )}
             <div className="chat-header-info">
               <h2>{currentAgent?.name || "Select Agent"}</h2>
               <p>Agent Details</p>

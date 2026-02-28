@@ -46,11 +46,11 @@ export class OpenAIProvider implements AgentProvider {
 
 When analyzing screenshots:
 1. **Visual Hierarchy**: Comment on layout, spacing, typography hierarchy
-2. **User Experience**: Identify usability issues, navigation problems, accessibility concerns  
+2. **User Experience**: Identify usability issues, navigation problems, accessibility concerns
 3. **Design Quality**: Evaluate color choices, consistency, visual appeal
 4. **Improvement Suggestions**: Provide specific, implementable recommendations
 
-Format your responses with clear sections and actionable recommendations. Be constructive and specific in your feedback.`
+Format your responses with clear sections and actionable recommendations. Be constructive and specific in your feedback.` + (request.systemPrompt ? `\n\nAdditional instructions: ${request.systemPrompt}` : "")
       });
       
       // Add context messages if provided

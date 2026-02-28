@@ -221,6 +221,7 @@ async function* executeOrchestratorWorkflow(
     name: string;
     description: string;
     isOrchestrator?: boolean;
+    role?: string;
   }>,
   _claudeAuth?: ChatRequest['claudeAuth'],
 ): AsyncGenerator<StreamResponse> {
@@ -304,9 +305,11 @@ async function* executeOrchestratorWorkflow(
       }
     ];
 
-    const agentDescriptions = workerAgents.map(agent => 
-      `- ${agent.id}: ${agent.description}`
-    ).join('\n');
+    const agentDescriptions = workerAgents.map(agent => {
+      const role = availableAgents?.find(a => a.id === agent.id)?.role;
+      const roleStr = role ? ` [${role}]` : '';
+      return `- ${agent.id}${roleStr}: ${agent.description}`;
+    }).join('\n');
 
     const systemPrompt = `You are the Orchestrator agent. Break user requests into steps where each agent saves results to a plain text file, and the next agent reads from that file.
 
@@ -478,6 +481,7 @@ async function* executeClaudeCommand(
   workingDirectory?: string,
   claudeAuth?: ChatRequest['claudeAuth'],
   debugMode?: boolean,
+  systemPrompt?: string,
 ): AsyncGenerator<StreamResponse> {
   let abortController: AbortController;
 
@@ -560,6 +564,7 @@ async function* executeClaudeCommand(
           ...(sessionId ? { resume: sessionId } : {}),
           ...(allowedTools ? { allowedTools } : {}),
           ...(workingDirectory ? { cwd: workingDirectory } : {}),
+          ...(systemPrompt ? { systemPrompt: systemPrompt } : {}),
           permissionMode: "bypassPermissions" as const,
         },
       })) {
@@ -740,6 +745,7 @@ export async function handleChatRequest(
             chatRequest.workingDirectory,
             chatRequest.claudeAuth,
             debugMode,
+            chatRequest.systemPrompt,
           );
         }
 

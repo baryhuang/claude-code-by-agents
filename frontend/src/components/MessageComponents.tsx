@@ -9,6 +9,7 @@ import type {
 import { CollapsibleDetails } from "./messages/CollapsibleDetails";
 import { MESSAGE_CONSTANTS } from "../utils/constants";
 import { useAgentConfig } from "../hooks/useAgentConfig";
+import { AgentAvatar } from "./shared/AgentAvatar";
 
 interface ChatMessageComponentProps {
   message: ChatMessage;
@@ -36,14 +37,13 @@ export function ChatMessageComponent({ message }: ChatMessageComponentProps) {
   return (
     <div className="message-item animate-in">
       {/* Avatar */}
-      <div 
-        className={`message-avatar ${isUser ? 'user' : ''}`}
-        style={!isUser && agent ? { 
-          backgroundColor: `var(--agent-${agent.id.replace('readymojo-', '').replace('peakmojo-', '')})`
-        } : {}}
-      >
-        {isUser ? "U" : agent?.name.charAt(0) || "C"}
-      </div>
+      {!isUser && agent ? (
+        <AgentAvatar size="md" agent={agent} />
+      ) : (
+        <div className={`message-avatar ${isUser ? 'user' : ''}`}>
+          {isUser ? "U" : "C"}
+        </div>
+      )}
 
       {/* Message Content */}
       <div className="message-content">
@@ -191,8 +191,8 @@ export function OrchestrationMessageComponent({
   return (
     <div className="message-item animate-in">
       {/* Avatar */}
-      <div className="message-avatar" style={{ background: 'linear-gradient(135deg, var(--agent-admin), var(--agent-web))' }}>
-        GC
+      <div className="message-avatar" style={{ background: 'linear-gradient(135deg, var(--claude-text-accent), var(--agent-web))' }}>
+        AR
       </div>
 
       {/* Message Content */}
@@ -295,15 +295,7 @@ export function OrchestrationMessageComponent({
                     marginBottom: '4px'
                   }}>
                     {agent && (
-                      <div 
-                        style={{
-                          width: '8px',
-                          height: '8px',
-                          borderRadius: '50%',
-                          backgroundColor: `var(--agent-${agent.id.replace('readymojo-', '').replace('peakmojo-', '')})`,
-                          flexShrink: 0
-                        }}
-                      />
+                      <AgentAvatar size="sm" agent={agent} />
                     )}
                     <span style={{
                       fontSize: '12px',
@@ -360,9 +352,13 @@ export function LoadingComponent({ agentId }: LoadingComponentProps = {}) {
   return (
     <div className="message-item animate-in">
       {/* Avatar */}
-      <div className="message-avatar">
-        {avatarLetter}
-      </div>
+      {agent ? (
+        <AgentAvatar size="md" agent={agent} />
+      ) : (
+        <div className="message-avatar">
+          {avatarLetter}
+        </div>
+      )}
 
       {/* Message Content */}
       <div className="message-content">

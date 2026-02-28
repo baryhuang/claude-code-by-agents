@@ -34,7 +34,7 @@ let backendProcess;
 let storage;
 
 // Set a consistent user data path for localStorage persistence
-app.setPath('userData', path.join(app.getPath('appData'), 'Agentrooms'));
+app.setPath('userData', path.join(app.getPath('appData'), 'Claude Ops-Deck'));
 
 const isDev = process.env.NODE_ENV === 'development';
 
@@ -54,7 +54,7 @@ function createWindow() {
       webSecurity: true,
       preload: path.join(__dirname, 'preload.js'),
       // Ensure partition for persistent storage
-      partition: 'persist:agentrooms',
+      partition: 'persist:claude-ops-deck',
       // Additional security settings
       sandbox: false, // We need this false for preload script
       safeDialogs: true,

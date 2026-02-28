@@ -2,7 +2,10 @@ import { X, RotateCcw, Plus, Edit3, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { ThemeToggle } from "./chat/ThemeToggle";
 import { useTheme } from "../hooks/useTheme";
-import { useAgentConfig, type Agent } from "../hooks/useAgentConfig";
+import { useAgentConfig, type Agent, type AgentAvatar, type AgentRole } from "../hooks/useAgentConfig";
+import { AvatarPicker } from "./settings/AvatarPicker";
+import { SystemPromptEditor } from "./settings/SystemPromptEditor";
+import { ToolPermissionPicker } from "./settings/ToolPermissionPicker";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -382,12 +385,26 @@ interface AgentFormModalProps {
 }
 
 function AgentFormModal({ agent, onSave, onCancel }: AgentFormModalProps) {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    workingDirectory: string;
+    description: string;
+    color: string;
+    apiEndpoint: string;
+    avatar?: AgentAvatar;
+    systemPrompt?: string;
+    allowedTools?: string[];
+    role?: AgentRole;
+  }>({
     name: agent?.name || '',
     workingDirectory: agent?.workingDirectory || '',
     description: agent?.description || '',
     color: agent?.color || 'bg-blue-500',
-    apiEndpoint: agent?.apiEndpoint || 'https://api.claudecode.run',
+    apiEndpoint: agent?.apiEndpoint || 'http://localhost:8080',
+    avatar: agent?.avatar,
+    systemPrompt: agent?.systemPrompt,
+    allowedTools: agent?.allowedTools,
+    role: agent?.role,
   });
 
   const handleSave = () => {
@@ -450,7 +467,7 @@ function AgentFormModal({ agent, onSave, onCancel }: AgentFormModalProps) {
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 
+        <h3
           style={{
             fontSize: "16px",
             fontWeight: 600,
@@ -460,6 +477,17 @@ function AgentFormModal({ agent, onSave, onCancel }: AgentFormModalProps) {
         >
           {agent ? 'Edit Agent' : 'Add New Agent'}
         </h3>
+
+        {/* Avatar Picker */}
+        <div style={{ marginBottom: "16px" }}>
+          <label style={{ display: "block", fontSize: "14px", fontWeight: 500, color: "var(--claude-text-primary)", marginBottom: "6px" }}>
+            Avatar
+          </label>
+          <AvatarPicker
+            value={formData.avatar}
+            onChange={(avatar) => setFormData(prev => ({ ...prev, avatar }))}
+          />
+        </div>
 
         <div style={{ marginBottom: "16px" }}>
           <label style={{ display: "block", fontSize: "14px", fontWeight: 500, color: "var(--claude-text-primary)", marginBottom: "6px" }}>
@@ -512,7 +540,7 @@ function AgentFormModal({ agent, onSave, onCancel }: AgentFormModalProps) {
             type="url"
             value={formData.apiEndpoint}
             onChange={(e) => setFormData(prev => ({ ...prev, apiEndpoint: e.target.value }))}
-            placeholder="https://api.claudecode.run"
+            placeholder="http://localhost:8080"
             style={{
               width: "100%",
               padding: "8px 12px",
@@ -546,6 +574,26 @@ function AgentFormModal({ agent, onSave, onCancel }: AgentFormModalProps) {
           />
         </div>
 
+        {/* System Prompt & Persona */}
+        <div style={{ marginBottom: "16px" }}>
+          <SystemPromptEditor
+            value={formData.systemPrompt}
+            onChange={(prompt) => setFormData(prev => ({ ...prev, systemPrompt: prompt }))}
+            role={formData.role}
+            onRoleChange={(role) => setFormData(prev => ({ ...prev, role }))}
+          />
+        </div>
+
+        {/* Tool Permissions */}
+        <div style={{ marginBottom: "16px" }}>
+          <label style={{ display: "block", fontSize: "14px", fontWeight: 500, color: "var(--claude-text-primary)", marginBottom: "6px" }}>
+            Tool Permissions
+          </label>
+          <ToolPermissionPicker
+            value={formData.allowedTools}
+            onChange={(tools) => setFormData(prev => ({ ...prev, allowedTools: tools }))}
+          />
+        </div>
 
         <div style={{ display: "flex", gap: "8px", marginTop: "24px" }}>
           <button

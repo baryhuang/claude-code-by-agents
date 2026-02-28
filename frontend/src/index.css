@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ReadyMojo Orange Theme - Dark Mode (Default) */
+/* Claude Ops-Deck Theme - Dark Mode (Default) */
 :root {
   /* Main Background - Rich dark with warm undertones */
   --claude-main-bg: #1a1612;
@@ -16,7 +16,7 @@
   --claude-text-primary: #ffffff;
   --claude-text-secondary: #e6d5c4;
   --claude-text-muted: #b8a896;
-  --claude-text-accent: #ff6b35; /* Primary ReadyMojo orange */
+  --claude-text-accent: #ff6b35; /* Primary Ops-Deck orange */
   
   /* Message Colors - Warmer tones */
   --claude-message-bg: #2b251a;
@@ -46,7 +46,7 @@
   --claude-error: #ff4d4f;
 }
 
-/* ReadyMojo Orange Theme - Light Mode */
+/* Claude Ops-Deck Theme - Light Mode */
 [data-theme="light"] {
   /* Main Background - Clean light with warm orange undertones */
   --claude-main-bg: #faf8f6;
@@ -733,6 +733,22 @@ input, textarea {
   font-size: 14px;
   color: var(--claude-text-secondary);
   margin: 0;
+}
+
+/* Agent Avatar */
+.agent-avatar { transition: transform 0.15s ease; }
+.agent-avatar:hover { transform: scale(1.05); }
+
+/* Role Badge */
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 /* Animations */

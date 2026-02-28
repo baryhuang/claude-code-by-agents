@@ -11,6 +11,9 @@ export interface AgentConfiguration {
   apiEndpoint?: string; // For remote agents
   workingDirectory?: string;
   isOrchestrator?: boolean;
+  systemPrompt?: string;
+  allowedTools?: string[];
+  role?: string;
   config?: {
     apiKey?: string; // For OpenAI
     claudePath?: string; // For Claude Code

@@ -100,6 +100,7 @@ export class ClaudeCodeProvider implements AgentProvider {
             pathToClaudeCodeExecutable: this.claudePath,
             ...(request.sessionId ? { resume: request.sessionId } : {}),
             ...(request.workingDirectory ? { cwd: request.workingDirectory } : {}),
+            ...(request.systemPrompt ? { systemPrompt: request.systemPrompt } : {}),
             permissionMode: "bypassPermissions" as const,
           },
         })) {
