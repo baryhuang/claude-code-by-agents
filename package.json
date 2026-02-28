@@ -4,7 +4,7 @@
   "version": "0.0.7",
   "description": "AI Agent Mission Control - Multi-Agent Development Workspace",
   "main": "electron/main.js",
-  "author": "Claude Ops-Deck Team",
+  "author": "Axiom-Labs",
   "scripts": {
     "dev": "concurrently -k -n backend,frontend -c blue,green \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:frontend": "cd frontend && npm run dev",
@@ -31,7 +31,7 @@
     "postinstall": "cd frontend && npm install && cd ../backend && npm install"
   },
   "build": {
-    "appId": "com.claude-ops-deck.app",
+    "appId": "com.axiom-labs.claude-ops-deck",
     "productName": "Claude Ops-Deck",
     "electronVersion": "32.2.7",
     "directories": {
