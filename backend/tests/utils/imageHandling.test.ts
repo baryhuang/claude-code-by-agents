@@ -17,7 +17,7 @@ vi.mock("fs", () => ({
 
 describe("ImageHandler", () => {
   let imageHandler: ImageHandler;
-  const testTempDir = "/tmp/test-agentrooms";
+  const testTempDir = "/tmp/test-claude-ops-deck";
   
   beforeEach(() => {
     vi.clearAllMocks();

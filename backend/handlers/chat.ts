@@ -234,9 +234,9 @@ async function* executeOrchestratorWorkflow(
 
     // Get worker agents (exclude orchestrator)
     const workerAgents = availableAgents?.filter(agent => !agent.isOrchestrator) || [
-      { id: "readymojo-admin", name: "ReadyMojo Admin", description: "Admin dashboard and management interface" },
-      { id: "readymojo-api", name: "ReadyMojo API", description: "Backend API and server logic" },
-      { id: "readymojo-web", name: "ReadyMojo Web", description: "Frontend web application" },
+      { id: "project-admin", name: "Project Admin", description: "Admin dashboard and management interface" },
+      { id: "project-api", name: "Project API", description: "Backend API and server logic" },
+      { id: "project-web", name: "Project Web", description: "Frontend web application" },
       { id: "peakmojo-kit", name: "PeakMojo Kit", description: "UI component library and design system" }
     ];
 

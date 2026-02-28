@@ -1,10 +1,10 @@
 {
-  "name": "agentrooms",
+  "name": "claude-ops-deck",
   "version": "0.1.46",
   "type": "module",
-  "description": "Agentrooms - Multi-agent workspace for collaborative development",
+  "description": "Claude Ops-Deck - Multi-agent workspace for collaborative development",
   "keywords": [
-    "agentrooms",
+    "claude-ops-deck",
     "multi-agent",
     "ai",
     "workspace",
@@ -27,7 +27,7 @@
   "homepage": "https://github.com/sugyan/claude-code-webui#readme",
   "main": "dist/cli/node.js",
   "bin": {
-    "agentrooms": "dist/cli/node.js"
+    "claude-ops-deck": "dist/cli/node.js"
   },
   "files": [
     "dist/",

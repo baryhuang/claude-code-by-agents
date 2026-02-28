@@ -98,7 +98,7 @@ export function createApp(
    * /api/health:
    *   get:
    *     summary: Health check endpoint
-   *     description: Returns the current status and basic information about the Agentrooms service
+   *     description: Returns the current status and basic information about the Claude Ops-Deck service
    *     tags: [Health]
    *     responses:
    *       200:
@@ -532,7 +532,7 @@ export function createApp(
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Agentrooms API Documentation</title>
+          <title>Claude Ops-Deck API Documentation</title>
           <meta charset="utf-8"/>
           <meta name="viewport" content="width=device-width, initial-scale=1">
           ${swaggerUiCss}
@@ -552,7 +552,7 @@ export function createApp(
    * /api-docs.json:
    *   get:
    *     summary: OpenAPI specification in JSON format
-   *     description: Raw OpenAPI 3.0 specification for the Agentrooms API
+   *     description: Raw OpenAPI 3.0 specification for the Claude Ops-Deck API
    *     tags: [Documentation]
    *     responses:
    *       200:

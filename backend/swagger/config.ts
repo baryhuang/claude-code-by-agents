@@ -4,7 +4,7 @@ const options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'Agentrooms API',
+      title: 'Claude Ops-Deck API',
       version: '0.1.40',
       description: 'Multi-agent development workspace API for managing conversations with remote AI agents',
       license: {
@@ -12,7 +12,7 @@ const options = {
         url: 'https://opensource.org/licenses/MIT',
       },
       contact: {
-        name: 'Agentrooms',
+        name: 'Axiom-Labs',
         url: 'https://github.com/sugyan/claude-code-webui',
       },
     },
@@ -90,12 +90,12 @@ const options = {
             id: {
               type: 'string',
               description: 'Unique agent identifier',
-              example: 'readymojo-api',
+              example: 'project-api',
             },
             name: {
               type: 'string',
               description: 'Human-readable agent name',
-              example: 'ReadyMojo API',
+              example: 'Project API',
             },
             description: {
               type: 'string',
@@ -105,7 +105,7 @@ const options = {
             workingDirectory: {
               type: 'string',
               description: 'Agent working directory path',
-              example: '/home/user/readymojo-api',
+              example: '/home/user/project-api',
             },
             apiEndpoint: {
               type: 'string',
@@ -182,7 +182,7 @@ const options = {
             agentId: {
               type: 'string',
               description: 'Agent that created this conversation',
-              example: 'readymojo-api',
+              example: 'project-api',
             },
           },
           required: ['sessionId', 'startTime', 'lastTime', 'messageCount', 'lastMessagePreview'],

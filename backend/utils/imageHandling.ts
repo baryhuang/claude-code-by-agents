@@ -20,7 +20,7 @@ export interface ScreenshotCapture {
 export class ImageHandler {
   private tempDir: string;
   
-  constructor(tempDir: string = "/tmp/agentrooms") {
+  constructor(tempDir: string = "/tmp/claude-ops-deck") {
     this.tempDir = tempDir;
   }
   
