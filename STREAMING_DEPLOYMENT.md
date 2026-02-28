@@ -1,6 +1,6 @@
 # Streaming Deployment Configuration
 
-This document provides configuration guidance for deploying Agentrooms with streaming support in cloud environments.
+This document provides configuration guidance for deploying Claude Ops-Deck with streaming support in cloud environments.
 
 ## Common Issue: Proxy Buffering
 

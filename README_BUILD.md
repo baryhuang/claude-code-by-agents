@@ -1,4 +1,4 @@
-# AgentHub - Multi-Agent Programming Collaboration Tool
+# Claude Ops-Deck - Multi-Agent Programming Collaboration Tool
 
 This is a complete Electron desktop application based on the Claude Code Web Agent, redesigned to match the Claude Desktop App's exact styling with multi-agent chat capabilities.
 
@@ -11,9 +11,9 @@ This is a complete Electron desktop application based on the Claude Code Web Age
 - Makefile build system with DMG generation support
 - Application icons and macOS entitlements
 - Multi-agent system with 4 predefined agents:
-  - ReadyMojo Admin (Blue) - `/Users/buryhuang/git/readymojo-admin`
-  - ReadyMojo API (Green) - `/Users/buryhuang/git/readymojo-api` 
-  - ReadyMojo Web (Purple) - `/Users/buryhuang/git/readymojo-web`
+  - Project Admin (Blue) - `/Users/buryhuang/git/project-admin`
+  - Project API (Green) - `/Users/buryhuang/git/project-api`
+  - Project Web (Purple) - `/Users/buryhuang/git/project-web`
   - PeakMojo Kit (Orange) - `/Users/buryhuang/git/peakmojo-kit`
 
 ## Build System
