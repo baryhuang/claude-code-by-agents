@@ -2,9 +2,13 @@
 
 Native macOS + iOS app for coordinating multiple Claude Code agents across local and remote machines. Route tasks with `@agent-name` mentions, orchestrate multi-agent workflows, see every agent's work in one threaded UI.
 
-<img src="docs/screenshot.png" alt="Claude Code Agentrooms on macOS — iMessage-style 2-pane layout" width="720" />
+> 🤝 **Now in partnership with [OpenAgents](https://openagents.org)** — repo: **<https://github.com/openagentsorg/openagents>**
+>
+> Starting in v0.2.x, the Agentrooms UI is shared with — and developed alongside — [OpenAgents Go](https://github.com/openagentsorg/openagents/tree/main/packages/go). Some screenshots and in-app strings still say "OpenAgents Go" because they're literally the same app under different branding; the partnership lets us focus on the Claude Code workflow while the OpenAgents team owns the workspace backplane.
 
-> **v0.2.x is a full rewrite.** Earlier versions (Electron + Deno backend + React frontend) shipped through `v0.1.x`. The pre-rewrite stack is preserved on the `pre-v1-archive` tag. v0.2.x is the [OpenAgents Go](https://github.com/openagentsorg/openagents) Swift universal app rebranded for the Claude Code use case — versions are kept in lockstep with the OpenAgents Go upstream, see [UPSTREAM.md](UPSTREAM.md).
+<img src="docs/screenshot.png" alt="Claude Code Agentrooms on macOS — iMessage-style 2-pane layout (shared UI with OpenAgents Go)" width="720" />
+
+> **v0.2.x is a full rewrite.** Earlier versions (Electron + Deno backend + React frontend) shipped through `v0.1.x`. The pre-rewrite stack is preserved on the `pre-v1-archive` tag. v0.2.x onwards is the OpenAgents Go Swift universal app, distributed for the Claude Code use case — versions are kept in lockstep with the OpenAgents Go upstream, see [UPSTREAM.md](UPSTREAM.md).
 
 ## How it works
 
