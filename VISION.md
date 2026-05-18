@@ -1,18 +1,20 @@
 # Vision & Roadmap
 
-> **TL;DR.** Claude Code Agentrooms is becoming the chat client for *AI Digital Employees* — one app where every specialized agent in your org is reachable like a coworker, every request is answered in the same conversation it was asked in, and the UI for each task is generated on the fly. The Claude Code workflow is the first deep wedge; the architecture generalizes to any workflow that can be expressed as "a specialist who knows one thing and talks back."
+> **TL;DR.** Claude Code Agentrooms is **the chat client for the One-Person Company era**. OpenAI's Sam Altman predicts the first billion-dollar one-person company within 2026. Anthropic CEO Dario Amodei puts the odds at 70–80%. Real proof points are already shipping — Medvi, a telehealth startup launched in 2024 with $20,000 and a dozen AI tools, did $401M in 2025 and is tracking $1.8B in 2026 with a headcount of two. The operating model is the same in every case: one operator directing a fleet of specialist AI agents, each owning a workflow. **This is the software that makes that possible.**
 
 ---
 
 ## 1. The shift we're betting on
 
+A new operating model is forming. Call it the **One-Person Company (OPC)**, the **AI-first startup**, the **agentic team**, or — once the founder hires their first human — the **two-person billion-dollar company**. The names are different; the shape is the same: a small number of humans directing a large number of specialist AI agents.
+
 Three observations that shape this project:
 
-1. **Tacit knowledge doesn't survive personnel changes.** Every team has people whose value is "they remember how it was done last time." When that person leaves, the company loses an asset that was never written down. Most of what they know lives in email threads, chat messages, spreadsheets, file attachments, and their head.
-2. **Software-per-workflow is a tax that scales poorly.** Each new workflow tends to spawn a new tool with its own login, navigation, and mental model. The aggregate cost of switching context across them dwarfs the cost of any individual workflow.
-3. **LLM-backed agents make a different shape possible.** A workflow no longer needs its own screens. It needs a *specialist* that can be addressed in natural language, has access to the relevant history, and renders only the UI a given request needs.
+1. **Workflows no longer need their own software.** An LLM-backed *specialist* — a Claude Code agent, a sales agent, a support agent — can be addressed in natural language, has access to the relevant history, and renders only the UI a given request needs. Each new workflow used to spawn its own tool with its own login. Now it spawns a prompt and some tools, addressable from the same inbox the operator already checks.
+2. **The bottleneck moves from headcount to operator attention.** When agents do the execution, the constraint is no longer "how many people can we hire." It's "how many agents can one operator coordinate without losing context." Whoever solves that coordination problem owns the operating layer of the OPC era.
+3. **Tacit knowledge has to become company knowledge.** In a OPC, there are no "experienced employees" to remember how things were done. Every decision, every quote, every customer thread has to live in a system that any agent can query. Knowledge accumulation isn't a nice-to-have — it's the moat.
 
-The product hypothesis: people should reach an AI agent the way they reach a colleague — by message, in a channel they already use — and the agent should respond with whatever is most useful for *that* exchange (a sentence, a table, a chart, a button to confirm, a generated document). No new app to open. No menu to navigate. The chat *is* the application surface.
+The product hypothesis: the operator of a one-person company (or a small team with an AI workforce) should reach every specialist agent the way they'd reach a coworker — by message, in a channel they already use — and the agent should respond with whatever is most useful for *that* exchange (a sentence, a table, a chart, a button to confirm, a generated document). No new app to open. No menu to navigate. The chat *is* the application surface. **That is the OPC operating system.**
 
 ---
 
@@ -167,9 +169,9 @@ Why start with Claude Code agents as the first specialist runtime?
 
 - **Existing demand.** This repo's pre-rewrite audience came from "I want a UI on top of Claude Code" — that's the surface area Google sends people to.
 - **Tightly scoped specialist.** A Claude Code agent owns one working directory, one task style, has a clear toolset. That's the right size to validate the architecture.
-- **Routes to a real "AI Digital Employee" within engineering.** A team can have `@frontend`, `@backend`, `@ml`, `@infra` agents — each running on the appropriate machine, each with the appropriate auth and tools — and orchestrate them like coworkers. This is "AI Digital Employee for engineering teams."
+- **Routes to a concrete engineering OPC.** A solo founder (or small team) can have `@frontend`, `@backend`, `@ml`, `@infra` agents — each running on the appropriate machine, each with the appropriate auth and tools — and orchestrate them like coworkers. That's an **AI workforce for engineering** built from off-the-shelf parts (Claude Code + agent-connector + this app), in an afternoon, with no procurement cycle.
 
-Once the engineering wedge stabilizes, the same client + workspace + agent-connector substrate generalizes to any domain — sales, ops, design, support — by swapping the runtime on layer 3. The interaction layer (this repo) does not change.
+Once the engineering wedge stabilizes, the same client + workspace + agent-connector substrate generalizes to any domain in the One-Person Company stack — sales, ops, design, support, finance — by swapping the runtime on layer 3. The interaction layer (this repo) does not change. Whoever first builds the **operator inbox for the OPC era** owns durable surface area; that's what we're building.
 
 ---
 

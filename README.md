@@ -10,17 +10,21 @@ Native macOS + iOS app for coordinating multiple Claude Code agents across local
 
 > **v0.2.x is a full rewrite.** Earlier versions (Electron + Deno backend + React frontend) shipped through `v0.1.x`. The pre-rewrite stack is preserved on the `pre-v1-archive` tag. v0.2.x onwards is the OpenAgents Go Swift universal app, distributed for the Claude Code use case — versions are kept in lockstep with the OpenAgents Go upstream, see [UPSTREAM.md](UPSTREAM.md).
 
-## Vision
+## Vision: the chat client for the One-Person Company era
 
-Claude Code Agentrooms is becoming the chat client for **AI Digital Employees** — one app where every specialist agent in your org is reachable like a coworker, every request is answered in the same conversation it was asked in, and the UI for each task is generated on the fly. The Claude Code workflow is the first deep wedge; the architecture generalizes to any domain.
+OpenAI's Sam Altman predicts the first **billion-dollar one-person company (OPC)** within 2026. Anthropic CEO Dario Amodei puts the odds at **70–80%**. Real proof points are already shipping — Medvi, launched with $20K and a dozen AI tools, hit $401M in 2025 sales and is tracking $1.8B in 2026 with a headcount of two. The operating model is the same in every case: one operator directing a fleet of specialist AI agents, each owning a workflow.
+
+**This is the software that makes that possible.** One inbox where every agent in your **AI workforce** is reachable like a coworker, every request is answered in the same conversation it was asked in, and the UI for each task is generated on the fly.
 
 Three principles drive the design:
 
-- **Channel-native.** Email, SMS, voice, in-app — same agent, same memory, same conversation. Users don't have to learn a new tool to adopt the next agent.
+- **Channel-native.** Email, SMS, voice, in-app — same agent, same memory, same conversation. The operator doesn't have to learn a new tool to adopt the next agent.
 - **Conversation IS the interface.** No screens, no menus. Agents emit UI specs inline (charts, tables, forms, buttons); the client renders whatever a given request needs.
-- **Phased rollout, not big-bang.** Each specialist agent ships standalone. The org gets value from agent #1 long before agent #N is conceived. No orchestrator is privileged — agents are peers on a shared backplane.
+- **Phased rollout, not big-bang.** Each specialist agent ships standalone. You get value from agent #1 long before agent #N is conceived. No orchestrator is privileged — agents are peers on a shared backplane.
 
-The substrate is a three-layer architecture: a **knowledge layer** (the OpenAgents workspace backend — events, channels, attachments, history), an **interaction layer** (this app, plus channel adapters), and a **specialist layer** (independent agents, one per workflow, each running via [`@openagents-org/agent-connector`](https://www.npmjs.com/package/@openagents-org/agent-connector)). What this is *not*: a replacement for human judgment on irreversible decisions, an automator of physical work, or a chat UI bolted onto an existing app.
+The substrate is a three-layer architecture: a **knowledge layer** (the OpenAgents workspace backend — events, channels, attachments, history), an **interaction layer** (this app, plus channel adapters), and a **specialist layer** (independent agents, one per workflow, each running via [`@openagents-org/agent-connector`](https://www.npmjs.com/package/@openagents-org/agent-connector)). The Claude Code workflow is the first deep wedge — `@frontend`, `@backend`, `@ml`, `@infra` agents running on the right machines, orchestrated from one inbox. The same substrate generalizes to sales, ops, design, support by swapping the runtime on layer 3.
+
+What this is *not*: a replacement for human judgment on irreversible decisions, an automator of physical work, or a chat UI bolted onto an existing app.
 
 **→ [Read the full vision and roadmap](VISION.md)** for the architecture diagram, the principles in depth, and the near/mid/long-term plan.
 
