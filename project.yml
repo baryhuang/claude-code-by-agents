@@ -1,0 +1,115 @@
+name: Agentrooms
+options:
+  bundleIdPrefix: com.openagents
+  deploymentTarget:
+    macOS: "15.0"
+    iOS: "18.0"
+  developmentLanguage: en
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+packages:
+  Firebase:
+    url: https://github.com/firebase/firebase-ios-sdk
+    from: 11.0.0
+  SwiftUIJSONRender:
+    url: https://github.com/bipa-app/swiftui-json-render
+    exactVersion: "0.2.1"
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    PRODUCT_NAME: "Claude Code Agentrooms"
+    ENABLE_HARDENED_RUNTIME: YES
+    CODE_SIGN_STYLE: Automatic
+    DEAD_CODE_STRIPPING: YES
+targets:
+  Agentrooms:
+    type: application
+    platform: [macOS, iOS]
+    deploymentTarget:
+      macOS: "15.0"
+      iOS: "18.0"
+    sources:
+      - path: OpenAgents
+    dependencies:
+      - package: Firebase
+        product: FirebaseCore
+        platforms: [iOS]
+      - package: Firebase
+        product: FirebaseMessaging
+        platforms: [iOS]
+      - package: SwiftUIJSONRender
+        product: SwiftUIJSONRender
+    info:
+      path: OpenAgents/Info.plist
+      properties:
+        CFBundleDisplayName: Claude Code Agentrooms
+        UIBackgroundModes:
+          - remote-notification
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSApplicationCategoryType: public.app-category.developer-tools
+        NSHumanReadableCopyright: "Copyright © 2026 Agentrooms"
+        # Skips the App Store Connect "App Encryption Documentation" prompt on
+        # every upload. The app only uses Apple-provided standard encryption
+        # (HTTPS via URLSession + Keychain), which is exempt from US export
+        # compliance review.
+        ITSAppUsesNonExemptEncryption: false
+        # Advertise that we can receive arbitrary documents — wires the app
+        # into iOS "Open in…" pickers / share targets and macOS "Open With"
+        # menus. We're not the primary handler for any of these (LSHandlerRank:
+        # Alternate); on receipt the file becomes a chat-input attachment.
+        # `LSSupportsOpeningDocumentsInPlace` is intentionally omitted: on iOS
+        # the default (no in-place edit, file copied to the Inbox) is what we
+        # want, and the key is rejected by the macOS bundle validator.
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: "Attachment"
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            LSItemContentTypes:
+              - public.image
+              - public.movie
+              - public.audio
+              - public.pdf
+              - public.text
+              - public.composite-content
+              - public.archive
+              - public.data
+        # Required for App Store upload of a universal (iPhone+iPad) app.
+        # iPad multitasking validation requires all four orientations on iPad
+        # and a launch screen via UILaunchScreen (replaces a storyboard).
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        "UISupportedInterfaceOrientations~ipad":
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UILaunchScreen: {}
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.agentrooms.app
+        PRODUCT_NAME: "Claude Code Agentrooms"
+        GENERATE_INFOPLIST_FILE: NO
+        ENABLE_PREVIEWS: YES
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SUPPORTS_MACCATALYST: NO
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+      configs:
+        Debug:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
+        Release:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: ""
+    entitlements:
+      path: OpenAgents/OpenAgents.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.network.client: true
+        com.apple.security.files.user-selected.read-only: true
+        aps-environment: development

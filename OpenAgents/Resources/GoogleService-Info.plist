@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  PLACEHOLDER GoogleService-Info.plist
+  ====================================
+  Replace this file with the real one downloaded from the Firebase Console:
+
+    Firebase Console → openagentsweb project → Project Settings →
+    Your apps → iOS app (bundle id: com.openagents.go) →
+    "GoogleService-Info.plist" → Download
+
+  Without the real values, FirebaseApp.configure() will log a fatal error
+  on iOS launch. The placeholder is committed so xcodegen can wire the
+  resource path; the actual values are owned by the Firebase project and
+  should not live in the repo until the iOS app is added there.
+-->
+<plist version="1.0">
+<dict>
+    <key>API_KEY</key>
+    <string>PLACEHOLDER_REPLACE_WITH_REAL_PLIST</string>
+    <key>GCM_SENDER_ID</key>
+    <string>0</string>
+    <key>PLIST_VERSION</key>
+    <string>1</string>
+    <key>BUNDLE_ID</key>
+    <string>com.openagents.go</string>
+    <key>PROJECT_ID</key>
+    <string>openagentsweb</string>
+    <key>STORAGE_BUCKET</key>
+    <string>openagentsweb.appspot.com</string>
+    <key>IS_ADS_ENABLED</key>
+    <false/>
+    <key>IS_ANALYTICS_ENABLED</key>
+    <false/>
+    <key>IS_APPINVITE_ENABLED</key>
+    <false/>
+    <key>IS_GCM_ENABLED</key>
+    <true/>
+    <key>IS_SIGNIN_ENABLED</key>
+    <true/>
+    <key>GOOGLE_APP_ID</key>
+    <string>1:0:ios:0</string>
+</dict>
+</plist>

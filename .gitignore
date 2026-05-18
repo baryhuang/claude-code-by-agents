@@ -1,0 +1,19 @@
+.DS_Store
+.env
+.env.local
+
+# xcodegen generates this from project.yml — never commit
+*.xcodeproj/
+
+# Build artifacts
+build/
+dist/
+DerivedData/
+*.dmg
+*.ipa
+*.xcarchive
+
+# Xcode user state
+*.xcuserstate
+xcuserdata/
+*.swp
