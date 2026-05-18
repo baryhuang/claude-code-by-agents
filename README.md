@@ -4,7 +4,7 @@ Native macOS + iOS app for coordinating multiple Claude Code agents across local
 
 <img src="docs/screenshot.png" alt="Claude Code Agentrooms on macOS — iMessage-style 2-pane layout" width="720" />
 
-> **v1.0 is a full rewrite.** Earlier versions (Electron + Deno backend + React frontend) shipped through `v0.1.x`. The pre-v1 stack is preserved on the `pre-v1-archive` tag. v1.0+ is the [OpenAgents Go](https://github.com/openagentsorg/openagents) Swift universal app rebranded for the Claude Code use case — see [UPSTREAM.md](UPSTREAM.md).
+> **v0.2.x is a full rewrite.** Earlier versions (Electron + Deno backend + React frontend) shipped through `v0.1.x`. The pre-rewrite stack is preserved on the `pre-v1-archive` tag. v0.2.x is the [OpenAgents Go](https://github.com/openagentsorg/openagents) Swift universal app rebranded for the Claude Code use case — versions are kept in lockstep with the OpenAgents Go upstream, see [UPSTREAM.md](UPSTREAM.md).
 
 ## How it works
 
@@ -99,8 +99,8 @@ cp -R "build/dd/Build/Products/Release/Claude Code Agentrooms.app" "$STAGING/"
 ln -s /Applications "$STAGING/Applications"
 mkdir -p dist
 hdiutil create -fs HFS+ -srcfolder "$STAGING" \
-  -volname "Claude Code Agentrooms 1.0.0" \
-  -format UDZO -ov "dist/Agentrooms-1.0.0-arm64.dmg"
+  -volname "Claude Code Agentrooms 0.2.6" \
+  -format UDZO -ov "dist/Agentrooms-0.2.6-arm64.dmg"
 ```
 
 ## Architecture

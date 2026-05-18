@@ -23,7 +23,7 @@ Copied verbatim from upstream:
 - `project.yml`:
   - `PRODUCT_NAME` set to `Claude Code Agentrooms`
   - `PRODUCT_BUNDLE_IDENTIFIER` set to `com.agentrooms.app` (in-place upgrade over the prior Electron build)
-  - `MARKETING_VERSION` reset to `1.0.0`
+  - `MARKETING_VERSION` matches upstream (currently `0.2.6`) — version is kept in lockstep with the vendored commit so releases trace back to a known OpenAgents Go state
 - Default workspace endpoint unchanged from upstream (`https://workspace-endpoint.openagents.org`).
 
 ## Resync policy
