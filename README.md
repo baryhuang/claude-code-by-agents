@@ -107,6 +107,10 @@ hdiutil create -fs HFS+ -srcfolder "$STAGING" \
   -format UDZO -ov "dist/Agentrooms-0.2.6-arm64.dmg"
 ```
 
+## Vision & roadmap
+
+See [VISION.md](VISION.md) for where this is going. Short version: this app is becoming the chat client for *AI Digital Employees* — every specialist agent in an org reachable like a coworker, in a channel they already use, with the UI for each task generated on the fly. The Claude Code wedge is the first deep workflow; the architecture generalizes.
+
 ## Architecture
 
 See [UPSTREAM.md](UPSTREAM.md) for the source provenance and resync policy.
