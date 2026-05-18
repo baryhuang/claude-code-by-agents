@@ -2,9 +2,9 @@
 
 Native macOS + iOS app for coordinating multiple Claude Code agents across local and remote machines. Route tasks with `@agent-name` mentions, orchestrate multi-agent workflows, see every agent's work in one threaded UI.
 
-> 🤝 **Now in partnership with [OpenAgents](https://openagents.org)** — repo: **<https://github.com/openagentsorg/openagents>**
+> **Agentrooms × [OpenAgents](https://openagents.org)** — repo: **<https://github.com/openagentsorg/openagents>**
 >
-> Starting in v0.2.x, the Agentrooms UI is shared with — and developed alongside — [OpenAgents Go](https://github.com/openagentsorg/openagents/tree/main/packages/go). Some screenshots and in-app strings still say "OpenAgents Go" because they're literally the same app under different branding; the partnership lets us focus on the Claude Code workflow while the OpenAgents team owns the workspace backplane.
+> The Swift app is co-developed between this Claude-Code-focused distribution and [OpenAgents Go](https://github.com/openagentsorg/openagents/tree/main/packages/go). Same source, same architecture, two brands shipping to two audiences. Some screenshots and in-app strings still say "OpenAgents Go" because the app surface is shared — Agentrooms owns the Claude Code workflow, OpenAgents owns the workspace backplane.
 
 <img src="docs/screenshot.png" alt="Claude Code Agentrooms on macOS — iMessage-style 2-pane layout (shared UI with OpenAgents Go)" width="720" />
 
