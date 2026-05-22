@@ -1,28 +1,28 @@
-# Claude Code Agentrooms
+# Agentrooms
 
-Native macOS + iOS app for coordinating multiple Claude Code agents across local and remote machines. Route tasks with `@agent-name` mentions, orchestrate multi-agent workflows, see every agent's work in one threaded UI.
+Native macOS + iOS app for coordinating multiple coding-agent instances across local and remote machines. Start with Claude Code, add Codex or custom runtimes, route work with `@agent-name` mentions, and see every agent's work in one threaded room.
 
 > **Agentrooms × [OpenAgents](https://openagents.org)** — repo: **<https://github.com/openagentsorg/openagents>**
 >
-> The Swift app is co-developed between this Claude-Code-focused distribution and [OpenAgents Go](https://github.com/openagentsorg/openagents/tree/main/packages/go). Same source, same architecture, two brands shipping to two audiences. Some screenshots and in-app strings still say "OpenAgents Go" because the app surface is shared — Agentrooms owns the Claude Code workflow, OpenAgents owns the workspace backplane.
+> The Swift app is co-developed between this coding-agent-focused distribution and [OpenAgents Go](https://github.com/openagentsorg/openagents/tree/main/packages/go). Same source, same architecture, two brands shipping to two audiences. Some screenshots and in-app strings still say "OpenAgents Go" because the app surface is shared — Agentrooms owns the agent room experience, OpenAgents owns the workspace backplane.
 
 <img src="docs/screenshot.png" alt="Claude Code Agentrooms on macOS — iMessage-style 2-pane layout (shared UI with OpenAgents Go)" width="720" />
 
 > **v0.2.x is a full rewrite.** Earlier versions (Electron + Deno backend + React frontend) shipped through `v0.1.x`. The pre-rewrite stack is preserved on the `pre-v1-archive` tag. v0.2.x onwards is the OpenAgents Go Swift universal app, distributed for the Claude Code use case — versions are kept in lockstep with the OpenAgents Go upstream, see [UPSTREAM.md](UPSTREAM.md).
 
-## Vision: the chat client for the One-Person Company era
+## Vision: one room for many coding agents
 
-OpenAI's Sam Altman predicts the first **billion-dollar one-person company (OPC)** within 2026. Anthropic CEO Dario Amodei puts the odds at **70–80%**. Real proof points are already shipping — Medvi, launched with $20K and a dozen AI tools, hit $401M in 2025 sales and is tracking $1.8B in 2026 with a headcount of two. The operating model is the same in every case: one operator directing a fleet of specialist AI agents, each owning a workflow.
+Coding agents are most useful when they can run in parallel: one per repo, role, machine, runtime, or task style. A frontend agent can live on your laptop, an infra agent on a Mac mini, an ML agent on a GPU box, and a reviewer agent on a build server. The hard part is no longer starting one agent; it is keeping many of them addressable, visible, and coordinated.
 
-**This is the software that makes that possible.** One inbox where every agent in your **AI workforce** is reachable like a coworker, every request is answered in the same conversation it was asked in, and the UI for each task is generated on the fly.
+**Agentrooms is the room for that work.** One threaded UI where every coding agent is reachable by name, every request lands in the same place it was asked, and every runtime speaks through the same OpenAgents workspace protocol.
 
 Three principles drive the design:
 
-- **Channel-native.** Email, SMS, voice, in-app — same agent, same memory, same conversation. The operator doesn't have to learn a new tool to adopt the next agent.
-- **Conversation IS the interface.** No screens, no menus. Agents emit UI specs inline (charts, tables, forms, buttons); the client renders whatever a given request needs.
-- **Phased rollout, not big-bang.** Each specialist agent ships standalone. You get value from agent #1 long before agent #N is conceived. No orchestrator is privileged — agents are peers on a shared backplane.
+- **Multi-instance by default.** Run several Claude Code, Codex, or custom agents at once, each with its own working directory, machine, permissions, and tools.
+- **Provider-agnostic backplane.** Agentrooms is the client; OpenAgents is the workspace protocol. Claude Code is the first-class path today, while Codex and custom runtimes can join the same room.
+- **Direct routing, shared context.** Use `@frontend`, `@backend`, `@codex-review`, or any agent name to route work explicitly. Coordination happens in the room, with agents as peers on the same backplane.
 
-The substrate is a three-layer architecture: a **knowledge layer** (the OpenAgents workspace backend — events, channels, attachments, history), an **interaction layer** (this app, plus channel adapters), and a **specialist layer** (independent agents, one per workflow, each running via [`@openagents-org/agent-connector`](https://www.npmjs.com/package/@openagents-org/agent-connector)). The Claude Code workflow is the first deep wedge — `@frontend`, `@backend`, `@ml`, `@infra` agents running on the right machines, orchestrated from one inbox. The same substrate generalizes to sales, ops, design, support by swapping the runtime on layer 3.
+The substrate is a three-layer architecture: a **workspace layer** (the OpenAgents backend — events, channels, attachments, history), an **interaction layer** (this app, plus channel adapters), and a **runtime layer** (independent agents running via [`@openagents-org/agent-connector`](https://www.npmjs.com/package/@openagents-org/agent-connector)). The Claude Code workflow is the first deep wedge — `@frontend`, `@backend`, `@ml`, `@infra` agents running on the right machines from one room. The same substrate supports Codex, MCP-backed agents, and custom runtimes by swapping the runtime on layer 3.
 
 What this is *not*: a replacement for human judgment on irreversible decisions, an automator of physical work, or a chat UI bolted onto an existing app.
 
@@ -42,11 +42,12 @@ What this is *not*: a replacement for human judgment on irreversible decisions, 
                             ┌─────────────────────────────────────┐
                             │ Remote machines running             │
                             │ @openagents-org/agent-connector     │
-                            │ with `claude` runtime authorized    │
+                            │ with claude, codex, or custom       │
+                            │ runtimes authorized                 │
                             └─────────────────────────────────────┘
 ```
 
-The app is the UI. The workspace endpoint is the backplane. Your Claude Code agents run wherever you install `agent-connector`.
+The app is the UI. The workspace endpoint is the backplane. Your coding agents run wherever you install `agent-connector`.
 
 ## Setup
 
@@ -56,9 +57,9 @@ Download the latest `.dmg` from [Releases](https://github.com/baryhuang/claude-c
 
 iOS: TestFlight link coming with v1.1.
 
-### 2. Set up a Claude Code agent on a remote machine
+### 2. Set up an agent on a remote machine
 
-On any machine where you want a Claude Code agent to run (a Mac mini, a cloud instance, your laptop):
+On any machine where you want an agent to run (a Mac mini, a cloud instance, your laptop):
 
 ```sh
 npm install -g @openagents-org/agent-connector
@@ -75,6 +76,8 @@ agent-connector create backend --type claude
 # Start the daemon
 agent-connector up
 ```
+
+Codex and custom runtime support use the same workspace model as they become available through `agent-connector`.
 
 ### 3. Connect the agent to a workspace
 
